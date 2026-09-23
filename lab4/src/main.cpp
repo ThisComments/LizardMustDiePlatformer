@@ -2,7 +2,8 @@
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode({400, 300}), "SFML Test");
+    sf::RenderWindow window(sf::VideoMode({800, 600}), "Chizhov");
+    sf::Color background = sf::Color::Green;
 
     while (window.isOpen())
     {
@@ -12,9 +13,22 @@ int main()
             {
                 window.close();
             }
+
+            if (const auto *keyPressed = event->getIf<sf::Event::KeyPressed>())
+            {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Escape)
+                {
+                    window.close();
+                }
+
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Space)
+                {
+                    background = sf::Color::Blue;
+                }
+            }
         }
 
-        window.clear(sf::Color::Red);
+        window.clear(background);
         window.display();
     }
 
