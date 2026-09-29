@@ -1,58 +1,68 @@
 #include <SFML/Graphics.hpp>
 
-struct Point
+const sf::Vector2u WINDOW_SIZE{800, 600};
+
+struct Car
 {
-    float x;
-    float y;
+    sf::Vector2f position;
+    const float SPEED;
+    const sf::Color colorBody;
+    const sf::Color colorWheels;
+    const sf::Vector2f rectangleSize;
+    const sf::Vector2f circle1Offset;
+    const sf::Vector2f circle2Offset;
+    const float circleRadius;
+    const sf::Vector2f triangleOffset;
+    const std::vector<sf::Vector2f> trianglePoints;
 };
 
-struct Size
+struct Bounds
 {
-    float width;
-    float height;
+    sf::Vector2f position;
+    sf::Vector2f size;
 };
 
 sf::RectangleShape CreateRectangle(
-    const Point point, 
-    const Size size, 
+    const sf::Vector2f point, 
+    const sf::Vector2f size, 
     const sf::Color color
 )
 {
-    sf::RectangleShape rectangle(sf::Vector2f(size.width, size.height));
+    sf::RectangleShape rectangle(size);
     rectangle.setFillColor(color);
-    rectangle.setPosition({point.x, point.y});
+    rectangle.setPosition(point);
 
     return rectangle;
 }
 
 sf::CircleShape CreateCircle(
-    const Point point, 
+    const sf::Vector2f point, 
     const float radius, 
     const sf::Color color
 )
 {
     sf::CircleShape circle(radius);
     circle.setFillColor(color);
-    circle.setPosition({point.x, point.y});
+    circle.setPosition(point);
 
     return circle;
 }
 
 sf::ConvexShape CreateConvex(
-    const Point point, 
-    const sf::Color color,
-    const std::vector<Point>& points
+    const sf::Vector2f point,
+    const std::vector<sf::Vector2f>& points,
+    const sf::Color color
 )
 {
     sf::ConvexShape shape;
 
     shape.setFillColor(color);
-    shape.setPosition({point.x, point.y});
+    shape.setPosition(point);
     shape.setPointCount(points.size());
 
     for (size_t i = 0; i < points.size(); i++)
     {
-        shape.setPoint(i, sf::Vector2f(points[i].x, points[i].y));
+        shape.setPoint(i, points[i]);
     }
 
     return shape;
@@ -60,20 +70,53 @@ sf::ConvexShape CreateConvex(
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode({800, 600}), "Chizhov");
+    sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE), "Chizhov");
     sf::Color background = sf::Color::Green;
-    sf::RectangleShape rectangle = CreateRectangle({300.f, 250.f}, {100.f, 50.f}, sf::Color::Red);
-    sf::CircleShape circle1 = CreateCircle({300.f, 290.f}, 25.f, sf::Color::Black);
-    sf::CircleShape circle2 = CreateCircle({400.f, 290.f}, 25.f, sf::Color::Black);
 
-    std::vector<Point> points =
+    Car playerCar
     {
-        {0.f, 50.f},
-        {70.f, 50.f},
-        {0.f, 0.f}
+        {300.f, 250.f},
+        300.f,
+        sf::Color::Red,
+        sf::Color::Black,
+        {100.f, 50.f},
+        {0.f, 40.f},
+        {100.f, 40.f},
+        25.f,
+        {100.f, 0.f},
+        {
+            {0.f, 50.f},
+            {70.f, 50.f},
+            {0.f, 0.f}
+        }
     };
 
-    sf::ConvexShape triangle = CreateConvex({400.f, 250.f}, sf::Color::Red, points);
+    sf::RectangleShape rectangle = CreateRectangle
+    (
+        playerCar.position, 
+        playerCar.rectangleSize, 
+        playerCar.colorBody
+    );
+    sf::CircleShape circle1 = CreateCircle
+    (
+        playerCar.position + playerCar.circle1Offset, 
+        playerCar.circleRadius, 
+        playerCar.colorWheels
+    );
+    sf::CircleShape circle2 = CreateCircle
+    (
+        playerCar.position + playerCar.circle2Offset, 
+        playerCar.circleRadius, 
+        playerCar.colorWheels
+    );
+    sf::ConvexShape triangle = CreateConvex
+    (
+        playerCar.position + playerCar.triangleOffset, 
+        playerCar.trianglePoints,
+        playerCar.colorBody
+    );
+
+    sf::Clock clock;
 
     while (window.isOpen())
     {
@@ -97,6 +140,69 @@ int main()
                 }
             }
         }
+
+        float dt = clock.restart().asSeconds();
+        sf::Vector2f direction{0.f, 0.f};
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+        {
+            direction.x += 1.f;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+        {
+            direction.x -= 1.f;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
+        {
+            direction.y += 1.f;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
+        {
+            direction.y -= 1.f;
+        }
+
+        if (direction.length() > 0.f)
+        {
+            direction /= direction.length();
+        }
+        sf::Vector2f velocity = direction * playerCar.SPEED * dt;
+
+        playerCar.position += velocity;
+        rectangle.move(velocity);
+        triangle.move(velocity);
+        circle1.move(velocity);
+        circle2.move(velocity);
+
+        Bounds boundsPlayerCar
+        {
+            playerCar.position,
+            {
+                playerCar.triangleOffset.x + triangle.getGlobalBounds().size.x, 
+                playerCar.circle1Offset.y + playerCar.circleRadius * 2
+            }
+        };
+
+        if (boundsPlayerCar.position.x <= 0.f)
+        {
+            playerCar.position.x = 0.f;
+        }
+        if (boundsPlayerCar.position.y <= 0.f)
+        {
+            playerCar.position.y = 0.f;
+        }
+        if (boundsPlayerCar.position.x + boundsPlayerCar.size.x >= WINDOW_SIZE.x)
+        {
+            playerCar.position.x = WINDOW_SIZE.x - boundsPlayerCar.size.x;
+        }
+        if (boundsPlayerCar.position.y + boundsPlayerCar.size.y >= WINDOW_SIZE.y)
+        {
+            playerCar.position.y = WINDOW_SIZE.y - boundsPlayerCar.size.y;
+        }
+
+        rectangle.setPosition(playerCar.position);
+        triangle.setPosition(playerCar.position + playerCar.triangleOffset);
+        circle1.setPosition(playerCar.position + playerCar.circle1Offset);
+        circle2.setPosition(playerCar.position + playerCar.circle2Offset);
 
         window.clear(background);
 
