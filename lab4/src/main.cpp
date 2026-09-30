@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <iostream>
 
 const sf::Vector2u WINDOW_SIZE{800, 600};
 
@@ -10,6 +11,15 @@ struct Player
     sf::CircleShape circle1;
     sf::CircleShape circle2;
     sf::ConvexShape triangle;
+};
+
+struct Enemy
+{
+    sf::Vector2f position;
+    sf::Vector2f velocity;
+    sf::RectangleShape rectangle1;
+    sf::RectangleShape rectangle2;
+    sf::Clock colorTimer;
 };
 
 sf::RectangleShape CreateRectangle(
@@ -96,6 +106,40 @@ void playerInit(Player& player)
     );
 }
 
+void enemyInit(Enemy& enemy)
+{
+    enemy.position = {0.f, 0.f};
+    enemy.velocity = {200.0f, 150.0f};
+
+    enemy.rectangle1 = CreateRectangle
+    (
+        enemy.position, 
+        {50.f, 50.f}, 
+        sf::Color::Red
+    );
+
+    enemy.rectangle2 = CreateRectangle
+    (
+        enemy.position + sf::Vector2f{50.f, 0.f}, 
+        {50.f, 50.f}, 
+        sf::Color::Blue
+    );
+
+    enemy.colorTimer.start();
+}
+
+sf::FloatRect getBoundsPlayer(Player& player)
+{
+    return 
+    {
+        player.position,
+        {
+            player.rectangle.getGlobalBounds().size.x + player.triangle.getGlobalBounds().size.x, 
+            player.rectangle.getGlobalBounds().size.y + player.circle1.getGlobalBounds().size.y
+        }
+    };
+}
+
 void playerUpdate(Player& player, float dt)
 {
     sf::Vector2f direction{0.f, 0.f};
@@ -127,14 +171,7 @@ void playerUpdate(Player& player, float dt)
 
     player.position += velocity;
 
-    sf::FloatRect boundsPlayer
-    {
-        player.position,
-        {
-            player.rectangle.getGlobalBounds().size.x + player.triangle.getGlobalBounds().size.x, 
-            player.rectangle.getGlobalBounds().size.y + player.circle1.getGlobalBounds().size.y
-        }
-    };
+    sf::FloatRect boundsPlayer = getBoundsPlayer(player);
 
     if (boundsPlayer.position.x <= 0.f)
     {
@@ -159,12 +196,94 @@ void playerUpdate(Player& player, float dt)
     player.circle2.setPosition(player.position + player.rectangle.getGlobalBounds().size);
 }
 
+sf::FloatRect getBoundsEnemy(Enemy& enemy)
+{
+    return
+    {
+        enemy.position,
+        {
+            enemy.rectangle1.getGlobalBounds().size.x + enemy.rectangle2.getGlobalBounds().size.x, 
+            enemy.rectangle1.getGlobalBounds().size.y
+        }
+    };
+}
+
+void enemyUpdate(Enemy& enemy, float dt)
+{
+    enemy.position += enemy.velocity * dt;
+
+    sf::FloatRect boundsEnemy = getBoundsEnemy(enemy);
+
+    if (boundsEnemy.position.x <= 0.f)
+    {
+        enemy.position.x = 0.f;
+        enemy.velocity.x *= -1.f;
+    }
+    if (boundsEnemy.position.y <= 0.f)
+    {
+        enemy.position.y = 0.f;
+        enemy.velocity.y *= -1.f;
+    }
+    if (boundsEnemy.position.x + boundsEnemy.size.x >= WINDOW_SIZE.x)
+    {
+        enemy.position.x = WINDOW_SIZE.x - boundsEnemy.size.x;
+        enemy.velocity.x *= -1.f;
+    }
+    if (boundsEnemy.position.y + boundsEnemy.size.y >= WINDOW_SIZE.y)
+    {
+        enemy.position.y = WINDOW_SIZE.y - boundsEnemy.size.y;
+        enemy.velocity.y *= -1.f;
+    }
+
+    enemy.rectangle1.setPosition(enemy.position);
+    enemy.rectangle2.setPosition(enemy.position + sf::Vector2f{enemy.rectangle1.getGlobalBounds().size.x, 0.f});
+
+    if (enemy.colorTimer.getElapsedTime().asSeconds() >= 1.f)
+    {
+        enemy.colorTimer.restart();
+        sf::Color temp = enemy.rectangle1.getFillColor();
+        enemy.rectangle1.setFillColor(enemy.rectangle2.getFillColor());
+        enemy.rectangle2.setFillColor(temp);
+    }
+}
+
+void collisionUpdate(Player& player, Enemy& enemy)
+{
+    sf::FloatRect boundsEnemy = getBoundsEnemy(enemy);
+    sf::FloatRect boundsPlayer = getBoundsPlayer(player);
+
+    if (boundsEnemy.findIntersection(boundsPlayer))
+    {
+        player.position = {300.f, 250.f};
+        std::cout << "COLLISION DETECTED!" << std::endl;
+    }
+}
+
+void update(Player& player, Enemy& enemy, float dt)
+{
+    playerUpdate(player, dt);
+    enemyUpdate(enemy, dt);
+    collisionUpdate(player, enemy);
+}
+
 void playerDraw(sf::RenderWindow& window, const Player& player)
 {
     window.draw(player.circle1);
     window.draw(player.circle2);
     window.draw(player.rectangle);
     window.draw(player.triangle);
+}
+
+void enemyDraw(sf::RenderWindow& window, const Enemy& enemy)
+{
+    window.draw(enemy.rectangle1);
+    window.draw(enemy.rectangle2);
+}
+
+void draw(sf::RenderWindow& window, const Player& player, const Enemy& enemy)
+{
+    playerDraw(window, player);
+    enemyDraw(window, enemy);
 }
 
 int main()
@@ -174,6 +293,8 @@ int main()
 
     Player player;
     playerInit(player);
+    Enemy enemy;
+    enemyInit(enemy);
 
     sf::Clock clock;
 
@@ -202,11 +323,11 @@ int main()
 
         float dt = clock.restart().asSeconds();
         
-        playerUpdate(player, dt);
+        update(player, enemy, dt);
 
         window.clear(background);
 
-        playerDraw(window, player);
+        draw(window, player, enemy);
 
         window.display();
     }
