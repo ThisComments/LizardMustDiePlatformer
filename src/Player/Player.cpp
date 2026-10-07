@@ -5,15 +5,15 @@ const float JUMP_RELEASE_GRAVITY_MULTIPLIER = 2.f;
 const float DASH_SPEED = 1000.f;
 const float DASH_DURATION = 0.15f;
 const float DASH_COOLDOWN = 2.f;
+const float MAX_SPEED = 300.f;
+const float JUMP_SPEED = -600.f;
+const float ACCELERATION = 1800.f;
 
 Player::Player() 
-    :   m_texture("../assets/hero.png"),
+    :   m_texture("./assets/hero.png"),
         m_sprite(m_texture),
         m_velocity({0, 0}),
         m_facingDirection(1.f),
-        m_acceleration(1800.f),
-        m_maxSpeed(300.f),
-        m_jumpSpeed(-600.f),
         m_canAirJump(false),
         m_isGrounded(false),
         m_isDashing(false),
@@ -27,14 +27,17 @@ Player::Player()
     m_sprite.setScale({scale, scale});
 
     sf::FloatRect bounds = m_sprite.getLocalBounds();
-    m_sprite.setOrigin({
-        bounds.size.x / 2.f,
-        bounds.size.y / 2.f
-    });
+    m_sprite.setOrigin({bounds.size.x / 2.f, bounds.size.y / 2.f});
     m_sprite.setPosition({300.f, 250.f});
 }
 
-void Player::Update(PlayerInput& input, const float friction, const float gravity, const float dt)
+void Player::Update(
+    PlayerInput& input, 
+    const float friction, 
+    const float gravity, 
+    const LiquidProperties liquidProperties,
+    const float dt
+)
 {
     if (m_isDashing)
 	{
@@ -42,11 +45,11 @@ void Player::Update(PlayerInput& input, const float friction, const float gravit
         m_sprite.move(m_velocity * dt);
 		return;
 	}
-    StartDash(input.dash);
+    StartDash(input.dash, liquidProperties.allowsDash);
 
-    Move(input, friction, dt);
-    ApplyGravity(gravity, input.jumpHeld, dt);
-    Jump(input.jump);
+    Move(input, liquidProperties.movementSpeedScale, friction, dt);
+    ApplyGravity(gravity, liquidProperties.gravityScale, input.jumpHeld, dt);
+    Jump(input.jump, liquidProperties.allowsJump);
     UpdateDirection();
 
     if (m_cooldownDash > 0)
@@ -61,11 +64,15 @@ void Player::Draw(sf::RenderWindow& window) const
     window.draw(m_sprite);
 }
 
-void Player::Jump(bool& isJump)
+void Player::Jump(bool& isJump, const bool allowsJump)
 {
+    if (!allowsJump) 
+    {
+        return;
+    }
     if (isJump && m_isGrounded)
     {
-        m_velocity.y = m_jumpSpeed;
+        m_velocity.y = JUMP_SPEED;
 
         m_isGrounded = false;
         m_canAirJump = true;
@@ -74,20 +81,25 @@ void Player::Jump(bool& isJump)
     }
     else if (isJump && !m_isGrounded && m_canAirJump)
     {
-        m_velocity.y = m_jumpSpeed;
+        m_velocity.y = JUMP_SPEED;
         m_canAirJump = false;
         isJump = false;
     }
 }
 
-void Player::ApplyGravity(const float gravity, const bool isJumpHeld, const float dt)
+void Player::ApplyGravity(
+    const float gravity, 
+    const float gravityScale, 
+    const bool isJumpHeld, 
+    const float dt
+)
 {
     if (m_isGrounded)
     {
         return;
     }
 
-    float currentGravity = gravity;
+    float currentGravity = gravity * gravityScale;
 
     if (m_velocity.y < 0.f && !isJumpHeld)
     {
@@ -97,9 +109,9 @@ void Player::ApplyGravity(const float gravity, const bool isJumpHeld, const floa
     m_velocity.y += currentGravity * dt;
 }
 
-void Player::StartDash(bool& isDash)
+void Player::StartDash(bool& isDash, const bool allowsDash)
 {
-	if (!isDash || m_isDashing || m_cooldownDash > 0 || (!m_isGrounded && !m_canAirDash))
+	if (!allowsDash || !isDash || m_isDashing || m_cooldownDash > 0 || (!m_isGrounded && !m_canAirDash))
 	{
 		return;
 	}
@@ -135,7 +147,6 @@ void Player::UpdateDash(const float dt)
 	if (m_dashTimer <= 0.f)
 	{
 		m_isDashing = false;
-		m_velocity.x = 0.f;
 	}
 }
 
@@ -146,23 +157,33 @@ void Player::StopDash()
 	m_velocity.x = 0.f;
 }
 
-void Player::Move(const PlayerInput& input, const float friction, const float dt)
+void Player::Move(
+    const PlayerInput& input, 
+    const float movementSpeedScale,
+    const float friction, 
+    const float dt
+)
 {
     bool isMoving = false;
+    float moveDirection = 0.f;
 
-    if (input.moveRight) {
-        m_velocity.x += m_acceleration * dt;
-        m_facingDirection = 1.f;
-        isMoving = true;
-
+    if (input.moveLeft)
+    {
+        moveDirection -= 1.f;
     }
-    if (input.moveLeft) {
-        m_velocity.x -= m_acceleration * dt;
-        m_facingDirection = -1.f;
-        isMoving = true;
+    if (input.moveRight)
+    {
+        moveDirection += 1.f;
     }
 
-    if (!isMoving)
+    if (moveDirection != 0.f)
+    {
+        isMoving = true;
+        m_velocity.x += moveDirection * ACCELERATION * dt;
+        m_facingDirection = moveDirection;
+    }
+
+    if (!isMoving && m_isGrounded)
     {
         if (m_velocity.x > 0.f)
         {
@@ -174,7 +195,9 @@ void Player::Move(const PlayerInput& input, const float friction, const float dt
         }
     }
 
-    m_velocity.x = std::clamp(m_velocity.x, -m_maxSpeed, m_maxSpeed);
+    const float currentMaxSpeed = MAX_SPEED * movementSpeedScale;
+
+    m_velocity.x = std::clamp(m_velocity.x, -currentMaxSpeed, currentMaxSpeed);
 }
 
 void Player::UpdateDirection()

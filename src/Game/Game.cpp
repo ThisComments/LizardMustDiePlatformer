@@ -3,6 +3,7 @@
 
 const float CAMERA_TRACKING_WIDTH = 600.f;
 const float CAMERA_TRACKING_HEIGHT = 400.f;
+const sf::Color background(135, 206, 235);
 
 Game::Game()
     :   m_window(sf::VideoMode({1500, 1200}), "Chizhov"),
@@ -37,7 +38,7 @@ void Game::Run()
 
         m_world.Update(input, dt);
         UpdateCamera();
-        m_window.clear();
+        m_window.clear(background);
         m_window.setView(m_camera);
         m_world.Draw(m_window);
         m_window.display();

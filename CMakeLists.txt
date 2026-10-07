@@ -12,6 +12,8 @@ add_executable(game
     src/Game/Game.cpp
     src/World/World.cpp
     src/Obstacle/Obstacle.cpp
+    src/Liquid/Liquid.cpp
+    src/LiquidSystem/LiquidSystem.cpp
     src/CollisionSystem/CollisionSystem.cpp
     src/KeyboardHandler/KeyboardHandler.cpp
 )
@@ -21,7 +23,9 @@ target_include_directories(game PRIVATE
     src/Game
     src/World
     src/Obstacle
+    src/Liquid/
     src/CollisionSystem
+    src/LiquidSystem
     src/KeyboardHandler
 )
 

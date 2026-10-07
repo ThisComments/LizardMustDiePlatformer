@@ -9,10 +9,17 @@ KeyboardHandler::KeyboardHandler()
 
 void KeyboardHandler::Update()
 {
-    m_input.moveLeft = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A);
-    m_input.moveRight = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D);
+    m_input.moveLeft = 
+        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)
+        || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left);
+    m_input.moveRight = 
+        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)
+        || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right);
     bool dashHeld = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift);
-    bool jumpHeld = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space);
+    bool jumpHeld = 
+        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)
+        || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)
+        || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up);
 
     m_input.jump = jumpHeld && !m_previousJump;
     m_input.jumpHeld = jumpHeld;
