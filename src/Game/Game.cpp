@@ -4,11 +4,13 @@
 const float CAMERA_TRACKING_WIDTH = 600.f;
 const float CAMERA_TRACKING_HEIGHT = 400.f;
 const sf::Color background(135, 206, 235);
+const float MAX_DELTA_TIME = 1.f / 20.f;
 
 Game::Game()
     :   m_window(sf::VideoMode({1500, 1200}), "Chizhov"),
         m_camera(sf::FloatRect({0.f, 0.f}, {1500.f, 1200.f}))
 {
+	m_window.setVerticalSyncEnabled(true);
     sf::FloatRect worldBounds = m_world.GetBounds();
 
 	m_camera.setCenter({
@@ -23,7 +25,10 @@ void Game::Run()
 {
     while (m_window.isOpen())
     {
-        const float dt = m_clock.restart().asSeconds();
+        const float dt = std::min(
+			m_clock.restart().asSeconds(),
+			MAX_DELTA_TIME
+		);
 
         while (const std::optional event = m_window.pollEvent())
         {

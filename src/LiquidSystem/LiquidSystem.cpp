@@ -2,7 +2,7 @@
 
 LiquidResult LiquidSystem::Resolve(const Player& player, const std::vector<Liquid>& liquids) const
 {
-	LiquidResult result{false, {}};
+	LiquidResult result;
 
 	const sf::FloatRect playerBounds = player.GetBounds();
 
@@ -14,7 +14,7 @@ LiquidResult LiquidSystem::Resolve(const Player& player, const std::vector<Liqui
 		}
 
 		result.isInLiquid = true;
-		result.properties = liquid.GetProperties();
+		result.modifiers = liquid.GetModifier();
 
 		break;
 	}

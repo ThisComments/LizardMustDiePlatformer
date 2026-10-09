@@ -1,6 +1,6 @@
 #include "World.h"
-#include "SurfaceTypes.h"
-#include "LiquidTypes.h"
+#include "../Obstacle/SurfaceTypes.h"
+#include "../Liquid/LiquidTypes.h"
 
 World::World()
     :   m_bounds({0.f, 0.f}, {3000.f, 2000.f}),
@@ -50,28 +50,46 @@ World::World()
 
 void World::Update(PlayerInput& input, const float dt)
 {
+    m_player.Update(input, m_playerEnvironment, dt);
+    
     CollisionResult collisionResult = m_collisionSystem.Resolve(m_player, m_obstacles);
     LiquidResult liquidResult = m_liquidSystem.Resolve(m_player, m_liquids);
-    LiquidProperties currentProperties = DEFAULT_PROPERTIES;
-    if (liquidResult.isInLiquid)
-    {
-        currentProperties = liquidResult.properties;
-    }
-    m_player.Update(input, collisionResult.groundFriction, m_gravity, currentProperties, dt);
-    m_player.SetIsGrounded(collisionResult.isGrounded);
+
+    m_playerEnvironment = BuildEnvironmentState(
+        collisionResult,
+        liquidResult
+    );
 }
 
-void World::Draw(sf::RenderWindow& window) const
+EnvironmentState World::BuildEnvironmentState(
+    const CollisionResult& collisionResult,
+    const LiquidResult& liquidResult
+) const
+{
+    EnvironmentState environmentState;
+
+    environmentState.isGrounded = collisionResult.isGrounded;
+    environmentState.groundFriction = collisionResult.groundFriction;
+    
+    if (liquidResult.isInLiquid)
+    {
+        environmentState.movementModifiers = liquidResult.modifiers;
+    }
+
+    return environmentState;
+}
+
+void World::Draw(sf::RenderTarget& window) const
 {
     DrawObstacles(window);
     m_player.Draw(window);
     DrawLiquids(window);
 }
 
-void World::DrawObstacles(sf::RenderWindow& window) const
+void World::DrawObstacles(sf::RenderTarget& window) const
 {
     
-    for (const Obstacle obstacle : m_obstacles)
+    for (const Obstacle& obstacle : m_obstacles)
     {
         sf::FloatRect bound = obstacle.GetBounds();
         sf::RectangleShape rect(bound.size);
@@ -100,14 +118,14 @@ void World::DrawObstacles(sf::RenderWindow& window) const
     }
 }
 
-void World::DrawLiquids(sf::RenderWindow& window) const
+void World::DrawLiquids(sf::RenderTarget& window) const
 {
-    for (const Liquid liquid : m_liquids)
+    for (const Liquid& liquid : m_liquids)
     {
         sf::FloatRect bound = liquid.GetBounds();
         sf::RectangleShape rect(bound.size);
         rect.setPosition(bound.position);
-        rect.setFillColor(sf::Color::Blue);
+        rect.setFillColor(sf::Color(0, 0, 255, 120));
 
         window.draw(rect);
     }

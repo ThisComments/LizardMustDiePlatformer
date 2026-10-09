@@ -1,12 +1,12 @@
 #pragma once
 #include <vector>
 #include "Liquid.h"
-#include "Player.h"
+#include "../Player/Player.h"
 
 struct LiquidResult
 {
-	bool isInLiquid;
-	LiquidProperties properties;
+	bool isInLiquid = false;
+	MovementModifiers modifiers;
 };
 
 class LiquidSystem

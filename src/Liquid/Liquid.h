@@ -1,13 +1,10 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include "../Player/Player.h"
 
 struct LiquidProperties
 {
-	float gravityScale;
-	float movementSpeedScale;
-	float drag;
-	bool allowsJump;
-	bool allowsDash;
+	MovementModifiers movementModifiers;
 };
 
 class Liquid
@@ -19,6 +16,6 @@ private:
 public:
 	Liquid(sf::Vector2f position, sf::Vector2f size, LiquidProperties properties);
 	sf::FloatRect GetBounds() const;
-	const LiquidProperties &GetProperties() const;
+	const MovementModifiers &GetModifier() const;
 
 };

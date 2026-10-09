@@ -115,7 +115,7 @@ CollisionResult CollisionSystem::Resolve(Player& player, const std::vector<Obsta
 
 bool CollisionSystem::TryStepUp(Player& player, const Obstacle& obstacle, const std::vector<Obstacle>& obstacles)
 {
-	if (!player.GetIsGrounded())
+	if (!player.IsGrounded())
 	{
 		return false;
 	}

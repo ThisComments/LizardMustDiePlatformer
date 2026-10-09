@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
-#include "Obstacle.h"
-#include "Player.h"
+#include "../Obstacle/Obstacle.h"
+#include "../Player/Player.h"
 
 struct CollisionResult
 {

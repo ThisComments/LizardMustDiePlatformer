@@ -1,6 +1,7 @@
 #include <algorithm>
 #include "Player.h"
 
+// ВЫНЕСТИ КУДА ТО ----------------------------------
 const float JUMP_RELEASE_GRAVITY_MULTIPLIER = 2.f;
 const float DASH_SPEED = 1000.f;
 const float DASH_DURATION = 0.15f;
@@ -8,6 +9,8 @@ const float DASH_COOLDOWN = 2.f;
 const float MAX_SPEED = 300.f;
 const float JUMP_SPEED = -600.f;
 const float ACCELERATION = 1800.f;
+const float MAX_FALL_SPEED = 1500.f;
+// --------------------------------------------------
 
 Player::Player() 
     :   m_texture("./assets/hero.png"),
@@ -20,7 +23,7 @@ Player::Player()
         m_dashDirection(0.f),
         m_dashTimer(0.f),
         m_canAirDash(false),
-        m_cooldownDash(0)
+        m_dashCooldown(0)
 {
     sf::Vector2u textureSize = m_texture.getSize();
     float scale = 100.f / textureSize.y;
@@ -33,9 +36,7 @@ Player::Player()
 
 void Player::Update(
     PlayerInput& input, 
-    const float friction, 
-    const float gravity, 
-    const LiquidProperties liquidProperties,
+    EnvironmentState& environmentState,
     const float dt
 )
 {
@@ -45,21 +46,22 @@ void Player::Update(
         m_sprite.move(m_velocity * dt);
 		return;
 	}
-    StartDash(input.dash, liquidProperties.allowsDash);
+    StartDash(input.dash, environmentState.movementModifiers.allowsDash);
+    SetIsGrounded(environmentState.isGrounded);
 
-    Move(input, liquidProperties.movementSpeedScale, friction, dt);
-    ApplyGravity(gravity, liquidProperties.gravityScale, input.jumpHeld, dt);
-    Jump(input.jump, liquidProperties.allowsJump);
+    Move(input, environmentState.movementModifiers.movementSpeedScale, environmentState.groundFriction, dt);
+    ApplyGravity(environmentState.gravity, environmentState.movementModifiers.gravityScale, input.jumpHeld, dt);
+    Jump(input.jump, environmentState.movementModifiers.allowsJump);
     UpdateDirection();
 
-    if (m_cooldownDash > 0)
+    if (m_dashCooldown > 0)
     {
-        m_cooldownDash -= dt;
+        m_dashCooldown -= dt;
     }
     m_sprite.move(m_velocity * dt);
 }
 
-void Player::Draw(sf::RenderWindow& window) const
+void Player::Draw(sf::RenderTarget& window) const
 {
     window.draw(m_sprite);
 }
@@ -107,11 +109,12 @@ void Player::ApplyGravity(
     }
 
     m_velocity.y += currentGravity * dt;
+    m_velocity.y = std::min(m_velocity.y, MAX_FALL_SPEED);
 }
 
 void Player::StartDash(bool& isDash, const bool allowsDash)
 {
-	if (!allowsDash || !isDash || m_isDashing || m_cooldownDash > 0 || (!m_isGrounded && !m_canAirDash))
+	if (!allowsDash || !isDash || m_isDashing || m_dashCooldown > 0 || (!m_isGrounded && !m_canAirDash))
 	{
 		return;
 	}
@@ -121,7 +124,7 @@ void Player::StartDash(bool& isDash, const bool allowsDash)
         m_canAirDash = false;
     }
 
-    m_cooldownDash = DASH_COOLDOWN;
+    m_dashCooldown = DASH_COOLDOWN;
 	m_isDashing = true;
 	m_dashTimer = DASH_DURATION;
 	m_dashDirection = m_facingDirection;
@@ -183,7 +186,7 @@ void Player::Move(
         m_facingDirection = moveDirection;
     }
 
-    if (!isMoving && m_isGrounded)
+    if (m_isGrounded && !isMoving)
     {
         if (m_velocity.x > 0.f)
         {
@@ -224,7 +227,7 @@ sf::FloatRect Player::GetBounds() const
     return m_sprite.getGlobalBounds();
 }
 
-bool Player::GetIsGrounded() const
+bool Player::IsGrounded() const
 {
     return m_isGrounded;
 }
