@@ -11,7 +11,6 @@ sf::FloatRect Liquid::GetBounds() const
     return m_bounds;
 }
 
-
 const MovementModifiers &Liquid::GetModifier() const
 {
     return m_properties.movementModifiers;

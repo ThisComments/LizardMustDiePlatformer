@@ -1,7 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include "../World/World.h"
-#include "../KeyboardHandler/KeyboardHandler.h"
+#include "Application/World/World.h"
+#include "Infrastructure/KeyboardHandler/KeyboardHandler.h"
 
 class Game
 {

@@ -1,26 +1,33 @@
 #pragma once
+
 #include "Liquid.h"
 
 const LiquidProperties WATER_PROPERTIES =
 {
-	0.3f,
-	0.6f,
-	true,
-	false
+	{
+		0.3f,
+		0.6f,
+		true,
+		false
+	}
 };
 
 const LiquidProperties LAVA_PROPERTIES =
 {
-	1.0f,
-	0.4f,
-	false,
-	false
+	{
+		1.0f,
+		0.4f,
+		false,
+		false
+	}
 };
 
 const LiquidProperties DEFAULT_PROPERTIES =
 {
-	1.0f,
-	1.0f,
-	true,
-	true
+	{
+		1.0f,
+		1.0f,
+		true,
+		true
+	}
 };

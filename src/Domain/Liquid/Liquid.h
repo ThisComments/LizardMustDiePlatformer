@@ -1,6 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include "../Player/Player.h"
+#include "Domain/Player/Player.h"
 
 struct LiquidProperties
 {
