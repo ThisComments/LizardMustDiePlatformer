@@ -1,22 +1,22 @@
-#include "World.h"
-#include "World/Map/TileProperties.h"
+#include "World/World.h"
 
-#include <algorithm>
+#include <utility>
 
 const float WORLD_GRAVITY = 1800.f;
+const sf::Vector2f PLAYER_START_POSITION = {300.f, 250.f};
 
-World::World()
-	: m_gravity(WORLD_GRAVITY)
-{
-	MapInit(m_map);
-	m_bounds = sf::FloatRect(
+World::World(Map map, const sf::Vector2f playerCollisionSize)
+	: m_map(std::move(map)),
+	  m_bounds(
 		{0.f, 0.f},
 		{
-			static_cast<float>(m_map.width * TILE_SIZE),
-			static_cast<float>(m_map.height * TILE_SIZE)
+			static_cast<float>(m_map.GetWidth() * TILE_SIZE),
+			static_cast<float>(m_map.GetHeight() * TILE_SIZE)
 		}
-	);
-
+	  ),
+	  m_gravity(WORLD_GRAVITY),
+	  m_player(PLAYER_START_POSITION, playerCollisionSize)
+{
 	m_playerEnvironment.gravity = m_gravity;
 	m_playerEnvironment.movementModifiers = DEFAULT_MOVEMENT_MODIFIERS;
 }
@@ -34,38 +34,48 @@ void World::Update(const float dt)
 	}
 	m_player.Update(m_playerEnvironment, dt);
 
-	const sf::Vector2f velocity = m_player.GetVelocity();
-	const AxisCollisionResult horizontalResult = m_collisionSystem.ResolveHorizontal(
-		m_player,
-		m_map,
-		velocity.x * dt
-	);
-	m_player.MoveBy({horizontalResult.allowedMovement, 0.f});
-	if (horizontalResult.collided)
-	{
-		m_player.ResolveHorizontalCollision(horizontalResult.normal);
-	}
-
-	const float verticalMovement = m_player.GetVelocity().y * dt;
-	const AxisCollisionResult verticalResult = m_collisionSystem.ResolveVertical(
-		m_player,
-		m_map,
-		verticalMovement
-	);
-	m_player.MoveBy({0.f, verticalResult.allowedMovement});
-	if (verticalResult.collided)
-	{
-		m_player.ResolveVerticalCollision(verticalResult.normal);
-	}
+	MovePlayerHorizontally(dt);
+	const AxisCollisionResult verticalResult = MovePlayerVertically(dt);
 
 	const CollisionResult collisionResult{
 		verticalResult.isGrounded,
 		verticalResult.groundFriction
 	};
-	const LiquidResult liquidResult = m_liquidSystem.Resolve(m_player, m_map);
+	const LiquidResult liquidResult = m_liquidSystem.Resolve(m_player.GetBounds(), m_map);
 
 	m_playerEnvironment = BuildEnvironmentState(collisionResult, liquidResult);
 	m_player.ApplyEnvironmentState(m_playerEnvironment);
+}
+
+void World::MovePlayerHorizontally(const float dt)
+{
+	const sf::Vector2f velocity = m_player.GetVelocity();
+	const AxisCollisionResult result = m_collisionSystem.ResolveHorizontal(
+		m_player.GetBounds(),
+		m_map,
+		velocity.x * dt
+	);
+	m_player.MoveBy({result.allowedMovement, 0.f});
+	if (result.collided)
+	{
+		m_player.ResolveHorizontalCollision(result.normal);
+	}
+}
+
+AxisCollisionResult World::MovePlayerVertically(const float dt)
+{
+	const float verticalMovement = m_player.GetVelocity().y * dt;
+	const AxisCollisionResult result = m_collisionSystem.ResolveVertical(
+		m_player.GetBounds(),
+		m_map,
+		verticalMovement
+	);
+	m_player.MoveBy({0.f, result.allowedMovement});
+	if (result.collided)
+	{
+		m_player.ResolveVerticalCollision(result.normal);
+	}
+	return result;
 }
 
 EnvironmentState World::BuildEnvironmentState(
@@ -87,10 +97,14 @@ EnvironmentState World::BuildEnvironmentState(
 	return environmentState;
 }
 
-void World::Draw(sf::RenderTarget& window) const
+const Map& World::GetMap() const
 {
-	m_render.Draw(m_map, window);
-	m_player.Draw(window);
+	return m_map;
+}
+
+const Player& World::GetPlayer() const
+{
+	return m_player;
 }
 
 sf::FloatRect World::GetBounds() const

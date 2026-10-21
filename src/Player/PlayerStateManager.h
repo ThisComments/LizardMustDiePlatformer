@@ -3,8 +3,8 @@
 
 #include <deque>
 
-#include "PlayerInputEvent.h"
-#include "PlayerState.h"
+#include "Input/PlayerInputEvent.h"
+#include "Player/PlayerState.h"
 
 struct PlayerStateActions
 {

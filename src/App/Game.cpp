@@ -1,101 +1,90 @@
-#include "Game.h"
+#include "App/Game.h"
 
 #include <algorithm>
+#include <filesystem>
+#include <optional>
 
-const float CAMERA_TRACKING_WIDTH = 600.f;
-const float CAMERA_TRACKING_HEIGHT = 400.f;
-const sf::Color background(135, 206, 235);
+#include <SFML/Graphics/Color.hpp>
+#include <SFML/Window/Event.hpp>
+#include <SFML/Window/VideoMode.hpp>
+
+#include "Infrastructure/LevelRepository.h"
+
+const sf::Vector2u WINDOW_SIZE = {1500, 1200};
+const char *const WINDOW_TITLE = "Chizhov";
+const sf::Color BACKGROUND_COLOR(135, 206, 235);
 const float MAX_DELTA_TIME = 1.f / 20.f;
+const char *const DEFAULT_LEVEL_FILE = "test_level.txt";
+
+namespace
+{
+	std::filesystem::path GetDefaultLevelPath()
+	{
+#ifdef PLATFORMER_LEVELS_DIR
+		const std::filesystem::path levelsDir = PLATFORMER_LEVELS_DIR;
+#else
+		const std::filesystem::path levelsDir =
+			std::filesystem::path(__FILE__).parent_path().parent_path().parent_path() / "levels";
+#endif
+		return levelsDir / DEFAULT_LEVEL_FILE;
+	}
+}
 
 Game::Game()
-    :   m_window(sf::VideoMode({1500, 1200}), "Chizhov"),
-        m_camera(sf::FloatRect({0.f, 0.f}, {1500.f, 1200.f}))
+	: m_window(sf::VideoMode(WINDOW_SIZE), WINDOW_TITLE),
+	  m_world(
+		LevelRepository().Load(GetDefaultLevelPath()),
+		m_worldRenderer.GetPlayerSpriteSize()
+	  ),
+	  m_cameraController(
+		sf::Vector2f(WINDOW_SIZE),
+		m_world.GetBounds()
+	  )
 {
 	m_window.setVerticalSyncEnabled(true);
 	m_window.setKeyRepeatEnabled(false);
-    sf::FloatRect worldBounds = m_world.GetBounds();
-
-	m_camera.setCenter({
-		worldBounds.position.x + worldBounds.size.x / 2.f,
-		worldBounds.position.y + worldBounds.size.y / 2.f
-	});
-
-	m_window.setView(m_camera);
+	m_window.setView(m_cameraController.GetView());
 }
 
 void Game::Run()
 {
-    while (m_window.isOpen())
-    {
-        const float dt = std::min(
+	while (m_window.isOpen())
+	{
+		const float dt = std::min(
 			m_clock.restart().asSeconds(),
 			MAX_DELTA_TIME
 		);
 
-        while (const std::optional event = m_window.pollEvent())
-        {
-            if (event->is<sf::Event::Closed>())
-            {
-                m_window.close();
-            }
+		ProcessEvents();
 
-            m_keyboardHandler.HandleEvent(*event);
-        }
-
-        for (const PlayerInputEvent& inputEvent : m_keyboardHandler.TakeEvents())
-        {
-            m_world.PushPlayerInput(inputEvent);
-        }
-
-        m_world.Update(dt);
-        UpdateCamera();
-        m_window.clear(background);
-        m_window.setView(m_camera);
-        m_world.Draw(m_window);
-        m_window.display();
-    }
+		m_world.Update(dt);
+		m_cameraController.Update(m_world.GetPositionPlayer());
+		Render();
+	}
 }
 
-void Game::UpdateCamera()
+void Game::ProcessEvents()
 {
-	sf::Vector2f cameraCenter = m_camera.getCenter();
-	sf::Vector2f playerPosition = m_world.GetPositionPlayer();
-
-	const float halfTrackingWidth = CAMERA_TRACKING_WIDTH / 2.f;
-	const float halfTrackingHeight = CAMERA_TRACKING_HEIGHT / 2.f;
-
-	if (playerPosition.x < cameraCenter.x - halfTrackingWidth)
+	while (const std::optional event = m_window.pollEvent())
 	{
-		cameraCenter.x = playerPosition.x + halfTrackingWidth;
-	}
-	else if (playerPosition.x > cameraCenter.x + halfTrackingWidth)
-	{
-		cameraCenter.x = playerPosition.x - halfTrackingWidth;
+		if (event->is<sf::Event::Closed>())
+		{
+			m_window.close();
+		}
+
+		m_keyboardHandler.HandleEvent(*event);
 	}
 
-	if (playerPosition.y < cameraCenter.y - halfTrackingHeight)
+	for (const PlayerInputEvent& inputEvent : m_keyboardHandler.TakeEvents())
 	{
-		cameraCenter.y = playerPosition.y + halfTrackingHeight;
+		m_world.PushPlayerInput(inputEvent);
 	}
-	else if (playerPosition.y > cameraCenter.y + halfTrackingHeight)
-	{
-		cameraCenter.y = playerPosition.y - halfTrackingHeight;
-	}
+}
 
-	sf::FloatRect worldBounds = m_world.GetBounds();
-	sf::Vector2f cameraSize = m_camera.getSize();
-
-	const float halfCameraWidth = cameraSize.x / 2.f;
-	const float halfCameraHeight = cameraSize.y / 2.f;
-
-	const float minCameraX = worldBounds.position.x + halfCameraWidth;
-	const float maxCameraX = worldBounds.position.x + worldBounds.size.x - halfCameraWidth;
-
-	const float minCameraY = worldBounds.position.y + halfCameraHeight;
-	const float maxCameraY = worldBounds.position.y + worldBounds.size.y - halfCameraHeight;
-
-	cameraCenter.x = std::clamp(cameraCenter.x, minCameraX, maxCameraX);
-	cameraCenter.y = std::clamp(cameraCenter.y, minCameraY, maxCameraY);
-
-	m_camera.setCenter(cameraCenter);
+void Game::Render()
+{
+	m_window.clear(BACKGROUND_COLOR);
+	m_window.setView(m_cameraController.GetView());
+	m_worldRenderer.Draw(m_world.GetMap(), m_world.GetPlayer(), m_window);
+	m_window.display();
 }

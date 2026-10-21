@@ -1,12 +1,6 @@
 #pragma once
 
-struct MovementModifiers
-{
-	float gravityScale = 1.f;
-	float movementSpeedScale = 1.f;
-	bool allowsJump = true;
-	bool allowsDash = true;
-};
+#include "Common/PhysicsTypes.h"
 
 struct EnvironmentState
 {

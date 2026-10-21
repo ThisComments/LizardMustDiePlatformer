@@ -1,17 +1,18 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
-#include "PlayerStateManager.h"
-#include "EnvironmentState.h"
+#include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
+
+#include "Player/EnvironmentState.h"
+#include "Player/PlayerStateManager.h"
 
 class Player
 {
 private:
-	sf::Texture m_texture;
-	sf::Sprite m_sprite;
 	sf::Vector2f m_position;
 	sf::Vector2f m_collisionSize;
 	sf::Vector2f m_velocity;
+	float m_facingDirection;
 	PlayerStateManager m_stateManager;
 
 	void Move(
@@ -31,15 +32,16 @@ private:
 	);
 
 public:
-	Player();
+	Player(sf::Vector2f position, sf::Vector2f collisionSize);
 
 	void PushInput(const PlayerInputEvent& event);
-	void Update(EnvironmentState& environmentState, float dt);
-	void Draw(sf::RenderTarget& window) const;
+	void Update(const EnvironmentState& environmentState, float dt);
 
 	sf::FloatRect GetBounds() const;
 	sf::Vector2f GetVelocity() const;
 	sf::Vector2f GetPosition() const;
+	float GetFacingDirection() const;
+	const PlayerState& GetState() const;
 	bool IsGrounded() const;
 	bool IsDashing() const;
 

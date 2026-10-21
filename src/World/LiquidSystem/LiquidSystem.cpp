@@ -1,20 +1,20 @@
-#include "LiquidSystem.h"
-#include "World/Map/TileProperties.h"
+#include "World/LiquidSystem/LiquidSystem.h"
 
 #include <algorithm>
 #include <cmath>
 
-LiquidResult LiquidSystem::Resolve(const Player& player, const Map& map) const
+#include "World/Map/TileProperties.h"
+
+LiquidResult LiquidSystem::Resolve(const sf::FloatRect& playerBounds, const Map& map) const
 {
 	LiquidResult result;
 
-	const sf::FloatRect playerBounds = player.GetBounds();
 	const float tileSize = static_cast<float>(TILE_SIZE);
 	const int firstCol = std::max(0, static_cast<int>(std::floor(playerBounds.position.x / tileSize)));
 	const int firstRow = std::max(0, static_cast<int>(std::floor(playerBounds.position.y / tileSize)));
-	const int lastCol = std::min(static_cast<int>(map.width) - 1,
+	const int lastCol = std::min(static_cast<int>(map.GetWidth()) - 1,
 		static_cast<int>(std::floor((playerBounds.position.x + playerBounds.size.x) / tileSize)));
-	const int lastRow = std::min(static_cast<int>(map.height) - 1,
+	const int lastRow = std::min(static_cast<int>(map.GetHeight()) - 1,
 		static_cast<int>(std::floor((playerBounds.position.y + playerBounds.size.y) / tileSize)));
 
 	for (int row = firstRow; row <= lastRow; ++row)
@@ -31,14 +31,7 @@ LiquidResult LiquidSystem::Resolve(const Player& player, const Map& map) const
 				continue;
 			}
 
-			const uint32_t index = static_cast<uint32_t>(row) * map.width + static_cast<uint32_t>(col);
-
-			if (index >= map.grid.size())
-			{
-				continue;
-			}
-
-			const TileProperties& properties = GetTileProperties(map.grid[index]);
+			const TileProperties& properties = GetTileProperties(map.GetTileAtCell(col, row));
 			if (!properties.isLiquid)
 			{
 				continue;

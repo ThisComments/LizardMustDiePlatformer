@@ -1,9 +1,10 @@
-#include "CollisionSystem.h"
-#include "World/Map/TileProperties.h"
+#include "World/CollisionSystem/CollisionSystem.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+
+#include "World/Map/TileProperties.h"
 
 const float COLLISION_EPSILON = 0.001f;
 const float GROUND_CONTACT_TOLERANCE = 0.01f;
@@ -19,7 +20,7 @@ struct TileRange
 	}
 };
 
-TileRange ComputeTileRange(const float min, const float max, const uint32_t tileCount)
+TileRange ComputeTileRange(const float min, const float max, const int tileCount)
 {
 	TileRange range;
 	if (tileCount == 0 || !std::isfinite(min) || !std::isfinite(max))
@@ -48,7 +49,7 @@ float Overlap(const float minA, const float maxA, const float minB, const float 
 }
 
 AxisCollisionResult CollisionSystem::ResolveHorizontal(
-	const Player& player,
+	const sf::FloatRect& bounds,
 	const Map& map,
 	const float deltaX
 ) const
@@ -62,7 +63,6 @@ AxisCollisionResult CollisionSystem::ResolveHorizontal(
 		return result;
 	}
 
-	const sf::FloatRect bounds = player.GetBounds();
 	const float tileSize = static_cast<float>(TILE_SIZE);
 	const float left = bounds.position.x;
 	const float right = left + bounds.size.x;
@@ -72,9 +72,9 @@ AxisCollisionResult CollisionSystem::ResolveHorizontal(
 	const TileRange cols = ComputeTileRange(
 		std::min(left, left + deltaX),
 		std::max(right, right + deltaX),
-		map.width
+		map.GetWidth()
 	);
-	const TileRange rows = ComputeTileRange(top, bottom, map.height);
+	const TileRange rows = ComputeTileRange(top, bottom, map.GetHeight());
 	if (cols.IsEmpty() || rows.IsEmpty())
 	{
 		return result;
@@ -116,7 +116,7 @@ AxisCollisionResult CollisionSystem::ResolveHorizontal(
 }
 
 AxisCollisionResult CollisionSystem::ResolveVertical(
-	const Player& player,
+	const sf::FloatRect& bounds,
 	const Map& map,
 	const float deltaY
 ) const
@@ -130,7 +130,6 @@ AxisCollisionResult CollisionSystem::ResolveVertical(
 		return result;
 	}
 
-	const sf::FloatRect bounds = player.GetBounds();
 	const float tileSize = static_cast<float>(TILE_SIZE);
 	const float left = bounds.position.x;
 	const float right = left + bounds.size.x;
@@ -141,8 +140,8 @@ AxisCollisionResult CollisionSystem::ResolveVertical(
 	const float sweepDown = isGroundProbe ? GROUND_CONTACT_TOLERANCE : std::max(0.f, deltaY);
 	const float sweepUp = std::max(0.f, -deltaY);
 
-	const TileRange rows = ComputeTileRange(top - sweepUp, bottom + sweepDown, map.height);
-	const TileRange cols = ComputeTileRange(left, right, map.width);
+	const TileRange rows = ComputeTileRange(top - sweepUp, bottom + sweepDown, map.GetHeight());
+	const TileRange cols = ComputeTileRange(left, right, map.GetWidth());
 	if (cols.IsEmpty() || rows.IsEmpty())
 	{
 		return result;
@@ -214,17 +213,6 @@ AxisCollisionResult CollisionSystem::ResolveVertical(
 
 const TileProperties* CollisionSystem::GetSolidTile(const Map& map, const int col, const int row) const
 {
-	if (col < 0 || row < 0 || col >= static_cast<int>(map.width) || row >= static_cast<int>(map.height))
-	{
-		return nullptr;
-	}
-
-	const std::size_t index = static_cast<std::size_t>(row) * map.width + static_cast<std::size_t>(col);
-	if (index >= map.grid.size())
-	{
-		return nullptr;
-	}
-
-	const TileProperties& properties = GetTileProperties(map.grid[index]);
+	const TileProperties& properties = GetTileProperties(map.GetTileAtCell(col, row));
 	return properties.isSolid ? &properties : nullptr;
 }

@@ -1,7 +1,8 @@
 #pragma once
 
+#include <SFML/Graphics/Rect.hpp>
+
 #include "World/Map/Map.h"
-#include "Player/Player.h"
 
 struct TileProperties;
 
@@ -23,8 +24,8 @@ struct CollisionResult
 class CollisionSystem
 {
 public:
-	AxisCollisionResult ResolveHorizontal(const Player& player, const Map& map, float deltaX) const;
-	AxisCollisionResult ResolveVertical(const Player& player, const Map& map, float deltaY) const;
+	AxisCollisionResult ResolveHorizontal(const sf::FloatRect& bounds, const Map& map, float deltaX) const;
+	AxisCollisionResult ResolveVertical(const sf::FloatRect& bounds, const Map& map, float deltaY) const;
 
 private:
 	const TileProperties* GetSolidTile(const Map& map, int col, int row) const;

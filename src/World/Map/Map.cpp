@@ -1,153 +1,88 @@
-#include "Map.h"
-#include "World/Map/TileProperties.h"
+#include "World/Map/Map.h"
 
 #include <cmath>
-#include <fstream>
 #include <stdexcept>
-#include <string>
+#include <utility>
 
-uint32_t GetIndex(const Map& map, const uint32_t col, const uint32_t row)
+#include "World/Map/TileProperties.h"
+
+Map::Map(const int width, const int height, std::vector<TileType> tiles)
+	: m_tiles(std::move(tiles)),
+	  m_width(width),
+	  m_height(height)
 {
-    return row * map.width + col;
+	if (width == 0 || height == 0)
+	{
+		throw std::invalid_argument("Map dimensions must be positive");
+	}
+
+	if (m_tiles.size() != static_cast<std::size_t>(width) * height)
+	{
+		throw std::invalid_argument("Map tile count does not match its dimensions");
+	}
 }
 
-struct TileChar
+int Map::GetWidth() const
 {
-    char symbol;
-    TileType type;
-    uint32_t visualId;
-};
-
-constexpr TileChar TILE_CHARS[] = {
-    {'.', TileType::Empty, TVI_NONE},
-    {'G', TileType::Ground, TVI_GROUND},
-    {'S', TileType::Stone, TVI_STONE},
-    {'W', TileType::Water, TVI_WATER},
-    {'I', TileType::Lava, TVI_LAVA},
-    {'L', TileType::Ice, TVI_ICE}
-};
-
-std::filesystem::path DefaultLevelPath()
-{
-    #ifdef PLATFORMER_LEVELS_DIR
-        const std::filesystem::path levelsDir = PLATFORMER_LEVELS_DIR;
-    #else
-        const std::filesystem::path levelsDir = std::filesystem::path(__FILE__).parent_path() / "levels";
-    #endif
-        return levelsDir / "test_level.txt";
+	return m_width;
 }
 
-void MapInit(Map& map)
+int Map::GetHeight() const
 {
-    MapLoad(map, DefaultLevelPath());
+	return m_height;
 }
 
-void MapLoad(Map& map, const std::filesystem::path& levelFile)
+std::size_t Map::GetIndex(const int col, const int row) const
 {
-    std::ifstream file(levelFile);
-    if (!file)
-    {
-        throw std::runtime_error("Cannot open level file: " + levelFile.string());
-    }
-
-    Map loaded;
-    std::string line;
-    uint32_t lineNumber = 0;
-    while (std::getline(file, line))
-    {
-        ++lineNumber;
-        if (!line.empty() && line.back() == '\r')
-        {
-            line.pop_back();
-        }
-        if (line.empty())
-        {
-            continue;
-        }
-
-        if (loaded.width == 0)
-        {
-            loaded.width = static_cast<uint32_t>(line.size());
-        }
-        else if (line.size() != loaded.width)
-        {
-            throw std::runtime_error(levelFile.string() + ":" + std::to_string(lineNumber) + ": row has " +
-                std::to_string(line.size()) + " tiles, expected " + std::to_string(loaded.width));
-        }
-
-        for (const char symbol : line)
-        {
-            const TileChar* tile = nullptr;
-            for (const TileChar& entry : TILE_CHARS)
-            {
-                if (entry.symbol == symbol)
-                {
-                    tile = &entry;
-                }
-            }
-            if (!tile)
-            {
-                throw std::runtime_error(levelFile.string() + ":" + std::to_string(lineNumber) +
-                    ": invalid tile character '" + std::string(1, symbol) + "'");
-            }
-            loaded.grid.push_back(tile->type);
-            loaded.visualIds.push_back(tile->visualId);
-        }
-        ++loaded.height;
-    }
-
-    if (loaded.height == 0)
-    {
-        throw std::runtime_error("Level file is empty: " + levelFile.string());
-    }
-
-    map = std::move(loaded);
+	return static_cast<std::size_t>(row) * m_width + col;
 }
 
-TileType MapGetTile(const Map& map, const float worldX, const float worldY)
+std::optional<CellCoordinates> Map::WorldToCell(const float worldX, const float worldY) const
 {
-    if (!std::isfinite(worldX) || !std::isfinite(worldY) ||
-        worldX < 0.f || worldY < 0.f || map.width == 0 || map.height == 0)
-    {
-        return TileType::Empty;
-    }
+	if (!std::isfinite(worldX) || !std::isfinite(worldY) || worldX < 0.f || worldY < 0.f)
+	{
+		return std::nullopt;
+	}
 
-    const float mapWidth = static_cast<float>(map.width) * TILE_SIZE;
-    const float mapHeight = static_cast<float>(map.height) * TILE_SIZE;
-    if (worldX >= mapWidth || worldY >= mapHeight)
-    {
-        return TileType::Empty;
-    }
+	const float mapWidth = static_cast<float>(m_width) * TILE_SIZE;
+	const float mapHeight = static_cast<float>(m_height) * TILE_SIZE;
+	if (worldX >= mapWidth || worldY >= mapHeight)
+	{
+		return std::nullopt;
+	}
 
-    const uint32_t col = static_cast<uint32_t>(worldX / TILE_SIZE);
-    const uint32_t row = static_cast<uint32_t>(worldY / TILE_SIZE);
-    const uint32_t index = GetIndex(map, col, row);
-    return index < map.grid.size() ? map.grid[index] : TileType::Empty;
+	const int col = static_cast<int>(worldX / TILE_SIZE);
+	const int row = static_cast<int>(worldY / TILE_SIZE);
+	if (col >= m_width || row >= m_height)
+	{
+		return std::nullopt;
+	}
+
+	return CellCoordinates{col, row};
 }
 
-uint32_t MapGetVisualId(const Map& map, const float worldX, const float worldY)
+TileType Map::GetTileAtCell(const int col, const int row) const
 {
-    if (!std::isfinite(worldX) || !std::isfinite(worldY) ||
-        worldX < 0.f || worldY < 0.f || map.width == 0 || map.height == 0)
-    {
-        return TVI_NONE;
-    }
+	if (col < 0 || row < 0 || col >= static_cast<int>(m_width) || row >= static_cast<int>(m_height))
+	{
+		return TileType::Empty;
+	}
 
-    const float mapWidth = static_cast<float>(map.width) * TILE_SIZE;
-    const float mapHeight = static_cast<float>(map.height) * TILE_SIZE;
-    if (worldX >= mapWidth || worldY >= mapHeight)
-    {
-        return TVI_NONE;
-    }
-
-    const uint32_t col = static_cast<uint32_t>(worldX / TILE_SIZE);
-    const uint32_t row = static_cast<uint32_t>(worldY / TILE_SIZE);
-    const uint32_t index = GetIndex(map, col, row);
-    return index < map.visualIds.size() ? map.visualIds[index] : TVI_NONE;
+	return m_tiles[GetIndex(static_cast<int>(col), static_cast<int>(row))];
 }
 
-bool MapIsSolid(const Map& map, const float worldX, const float worldY)
+TileType Map::GetTile(const float worldX, const float worldY) const
 {
-    const TileType tileType = MapGetTile(map, worldX, worldY);
-    return GetTileProperties(tileType).isSolid;
+	const std::optional<CellCoordinates> cell = WorldToCell(worldX, worldY);
+	if (!cell)
+	{
+		return TileType::Empty;
+	}
+
+	return m_tiles[GetIndex(cell->col, cell->row)];
+}
+
+bool Map::IsSolid(const float worldX, const float worldY) const
+{
+	return GetTileProperties(GetTile(worldX, worldY)).isSolid;
 }

@@ -1,7 +1,6 @@
-#include "Player.h"
+#include "Player/Player.h"
 
 #include <algorithm>
-#include <cmath>
 
 const float JUMP_RELEASE_GRAVITY_MULTIPLIER = 2.f;
 const float DASH_SPEED = 1000.f;
@@ -9,28 +8,14 @@ const float MAX_SPEED = 300.f;
 const float JUMP_SPEED = -600.f;
 const float ACCELERATION = 1800.f;
 const float MAX_FALL_SPEED = 1500.f;
-const float SPRITE_HEIGHT = 100.f;
 const float DIRECTION_SPEED_THRESHOLD = 10.f;
 
-Player::Player()
-	: m_texture("./assets/hero.png"),
-	  m_sprite(m_texture),
-	  m_position({300.f, 250.f}),
-	  m_collisionSize({0.f, 0.f}),
-	  m_velocity({0.f, 0.f})
+Player::Player(const sf::Vector2f position, const sf::Vector2f collisionSize)
+	: m_position(position),
+	  m_collisionSize(collisionSize),
+	  m_velocity({0.f, 0.f}),
+	  m_facingDirection(1.f)
 {
-	const sf::Vector2u textureSize = m_texture.getSize();
-	if (textureSize.y > 0)
-	{
-		const float scale = SPRITE_HEIGHT / static_cast<float>(textureSize.y);
-		m_sprite.setScale({scale, scale});
-	}
-
-	const sf::FloatRect bounds = m_sprite.getLocalBounds();
-	m_sprite.setOrigin({bounds.size.x / 2.f, bounds.size.y / 2.f});
-	m_sprite.setPosition(m_position);
-
-	m_collisionSize = m_sprite.getGlobalBounds().size;
 }
 
 void Player::PushInput(const PlayerInputEvent& event)
@@ -38,7 +23,7 @@ void Player::PushInput(const PlayerInputEvent& event)
 	m_stateManager.PushInput(event);
 }
 
-void Player::Update(EnvironmentState& environmentState, const float dt)
+void Player::Update(const EnvironmentState& environmentState, const float dt)
 {
 	const bool wasGrounded = m_stateManager.GetState().IsGrounded();
 
@@ -85,11 +70,6 @@ void Player::Update(EnvironmentState& environmentState, const float dt)
 	{
 		m_velocity.x = 0.f;
 	}
-}
-
-void Player::Draw(sf::RenderTarget& window) const
-{
-	window.draw(m_sprite);
 }
 
 void Player::ApplyGravity(
@@ -154,14 +134,13 @@ void Player::Move(
 
 void Player::UpdateDirection()
 {
-	const sf::Vector2f scale = m_sprite.getScale();
 	if (m_velocity.x > DIRECTION_SPEED_THRESHOLD)
 	{
-		m_sprite.setScale({std::abs(scale.x), scale.y});
+		m_facingDirection = 1.f;
 	}
 	else if (m_velocity.x < -DIRECTION_SPEED_THRESHOLD)
 	{
-		m_sprite.setScale({-std::abs(scale.x), scale.y});
+		m_facingDirection = -1.f;
 	}
 }
 
@@ -188,6 +167,16 @@ sf::Vector2f Player::GetPosition() const
 	return m_position;
 }
 
+float Player::GetFacingDirection() const
+{
+	return m_facingDirection;
+}
+
+const PlayerState& Player::GetState() const
+{
+	return m_stateManager.GetState();
+}
+
 sf::Vector2f Player::GetVelocity() const
 {
 	return m_velocity;
@@ -196,7 +185,6 @@ sf::Vector2f Player::GetVelocity() const
 void Player::MoveBy(const sf::Vector2f offset)
 {
 	m_position += offset;
-	m_sprite.setPosition(m_position);
 }
 
 void Player::ResolveHorizontalCollision(const float surfaceNormalX)
@@ -234,5 +222,4 @@ void Player::SetVelocity(const sf::Vector2f newVelocity)
 void Player::SetPosition(const sf::Vector2f newPosition)
 {
 	m_position = newPosition;
-	m_sprite.setPosition(m_position);
 }

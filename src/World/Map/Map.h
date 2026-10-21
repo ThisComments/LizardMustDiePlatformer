@@ -1,21 +1,36 @@
 #pragma once
+
 #include <cstdint>
-#include <filesystem>
+#include <optional>
 #include <vector>
-#include "TileType.h"
 
-constexpr uint32_t TILE_SIZE = 70;
+#include "World/Map/TileType.h"
 
-struct Map
+constexpr int TILE_SIZE = 50;
+
+struct CellCoordinates
 {
-	std::vector<TileType> grid;
-	std::vector<uint32_t> visualIds;
-	uint32_t width = 0;
-	uint32_t height = 0;
+	int col;
+	int row;
 };
 
-void MapInit(Map& map);
-void MapLoad(Map& map, const std::filesystem::path& levelFile);
-TileType MapGetTile(const Map& map, float worldX, float worldY);
-uint32_t MapGetVisualId(const Map& map, float worldX, float worldY);
-bool MapIsSolid(const Map& map, float worldX, float worldY);
+class Map
+{
+private:
+	std::vector<TileType> m_tiles;
+	int m_width;
+	int m_height;
+
+	std::size_t GetIndex(int col, int row) const;
+
+public:
+	Map(int width, int height, std::vector<TileType> tiles);
+
+	int GetWidth() const;
+	int GetHeight() const;
+
+	std::optional<CellCoordinates> WorldToCell(float worldX, float worldY) const;
+	TileType GetTileAtCell(int col, int row) const;
+	TileType GetTile(float worldX, float worldY) const;
+	bool IsSolid(float worldX, float worldY) const;
+};

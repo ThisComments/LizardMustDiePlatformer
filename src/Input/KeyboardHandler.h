@@ -5,12 +5,12 @@
 #include <vector>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include "Player/PlayerInputEvent.h"
+#include "Input/PlayerInputEvent.h"
 
 class KeyboardHandler
 {
 private:
-    enum class Action
+    enum class Action: int
     {
         MoveLeft,
         MoveRight,

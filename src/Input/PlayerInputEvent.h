@@ -1,7 +1,7 @@
 
 #pragma once
 
-enum class PlayerInputEventType
+enum class PlayerInputEventType: int
 {
     MoveLeftPressed,
     MoveLeftReleased,

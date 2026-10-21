@@ -1,6 +1,8 @@
 #pragma once
+#include <SFML/Graphics/Rect.hpp>
+
+#include "Common/PhysicsTypes.h"
 #include "World/Map/Map.h"
-#include "Player/Player.h"
 
 struct LiquidResult
 {
@@ -11,5 +13,5 @@ struct LiquidResult
 class LiquidSystem
 {
 public:
-	LiquidResult Resolve(const Player& player, const Map& map) const;
+	LiquidResult Resolve(const sf::FloatRect& bounds, const Map& map) const;
 };
