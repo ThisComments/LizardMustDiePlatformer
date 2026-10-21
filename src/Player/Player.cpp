@@ -1,260 +1,225 @@
+#include "Player/Player.h"
+
 #include <algorithm>
-#include "Player.h"
 
 const float JUMP_RELEASE_GRAVITY_MULTIPLIER = 2.f;
 const float DASH_SPEED = 1000.f;
-const float DASH_DURATION = 0.15f;
-const float DASH_COOLDOWN = 2.f;
 const float MAX_SPEED = 300.f;
 const float JUMP_SPEED = -600.f;
 const float ACCELERATION = 1800.f;
+const float MAX_FALL_SPEED = 1500.f;
+const float DIRECTION_SPEED_THRESHOLD = 10.f;
 
-Player::Player() 
-    :   m_texture("./assets/hero.png"),
-        m_sprite(m_texture),
-        m_velocity({0, 0}),
-        m_facingDirection(1.f),
-        m_canAirJump(false),
-        m_isGrounded(false),
-        m_isDashing(false),
-        m_dashDirection(0.f),
-        m_dashTimer(0.f),
-        m_canAirDash(false),
-        m_cooldownDash(0)
+Player::Player(const sf::Vector2f position, const sf::Vector2f collisionSize)
+	: m_position(position),
+	  m_collisionSize(collisionSize),
+	  m_velocity({0.f, 0.f}),
+	  m_facingDirection(1.f)
 {
-    sf::Vector2u textureSize = m_texture.getSize();
-    float scale = 100.f / textureSize.y;
-    m_sprite.setScale({scale, scale});
-
-    sf::FloatRect bounds = m_sprite.getLocalBounds();
-    m_sprite.setOrigin({bounds.size.x / 2.f, bounds.size.y / 2.f});
-    m_sprite.setPosition({300.f, 250.f});
 }
 
-void Player::Update(
-    PlayerInput& input, 
-    const float friction, 
-    const float gravity, 
-    const LiquidProperties liquidProperties,
-    const float dt
-)
+void Player::PushInput(const PlayerInputEvent& event)
 {
-    if (m_isDashing)
+	m_stateManager.PushInput(event);
+}
+
+void Player::Update(const EnvironmentState& environmentState, const float dt)
+{
+	const bool wasGrounded = m_stateManager.GetState().IsGrounded();
+
+	const PlayerStateActions actions = m_stateManager.ProcessInputQueue(
+		environmentState.movementModifiers.allowsJump,
+		environmentState.movementModifiers.allowsDash
+	);
+	const PlayerState& state = m_stateManager.GetState();
+
+	if (state.IsDashing())
 	{
-		UpdateDash(dt);
-        m_sprite.move(m_velocity * dt);
-		return;
+		m_velocity.x = state.dashDirection * DASH_SPEED;
+		m_velocity.y = 0.f;
 	}
-    StartDash(input.dash, liquidProperties.allowsDash);
+	else
+	{
+		Move(
+			state.MoveDirection(),
+			environmentState.movementModifiers.movementSpeedScale,
+			environmentState.groundFriction,
+			wasGrounded,
+			dt
+		);
+		ApplyGravity(
+			environmentState.gravity,
+			environmentState.movementModifiers.gravityScale,
+			state.jumpHeld,
+			wasGrounded,
+			dt
+		);
 
-    Move(input, liquidProperties.movementSpeedScale, friction, dt);
-    ApplyGravity(gravity, liquidProperties.gravityScale, input.jumpHeld, dt);
-    Jump(input.jump, liquidProperties.allowsJump);
-    UpdateDirection();
+		if (actions.jumpStarted)
+		{
+			m_velocity.y = JUMP_SPEED;
+		}
+	}
 
-    if (m_cooldownDash > 0)
-    {
-        m_cooldownDash -= dt;
-    }
-    m_sprite.move(m_velocity * dt);
-}
+	UpdateDirection();
 
-void Player::Draw(sf::RenderWindow& window) const
-{
-    window.draw(m_sprite);
-}
+	const bool wasDashing = state.IsDashing();
+	m_stateManager.UpdateTimers(dt, actions.dashStarted);
 
-void Player::Jump(bool& isJump, const bool allowsJump)
-{
-    if (!allowsJump) 
-    {
-        return;
-    }
-    if (isJump && m_isGrounded)
-    {
-        m_velocity.y = JUMP_SPEED;
-
-        m_isGrounded = false;
-        m_canAirJump = true;
-
-        isJump = false;
-    }
-    else if (isJump && !m_isGrounded && m_canAirJump)
-    {
-        m_velocity.y = JUMP_SPEED;
-        m_canAirJump = false;
-        isJump = false;
-    }
+	if (wasDashing && !state.IsDashing())
+	{
+		m_velocity.x = 0.f;
+	}
 }
 
 void Player::ApplyGravity(
-    const float gravity, 
-    const float gravityScale, 
-    const bool isJumpHeld, 
-    const float dt
+	const float gravity,
+	const float gravityScale,
+	const bool isJumpHeld,
+	const bool isGrounded,
+	const float dt
 )
 {
-    if (m_isGrounded)
-    {
-        return;
-    }
-
-    float currentGravity = gravity * gravityScale;
-
-    if (m_velocity.y < 0.f && !isJumpHeld)
-    {
-        currentGravity *= JUMP_RELEASE_GRAVITY_MULTIPLIER;
-    }
-
-    m_velocity.y += currentGravity * dt;
-}
-
-void Player::StartDash(bool& isDash, const bool allowsDash)
-{
-	if (!allowsDash || !isDash || m_isDashing || m_cooldownDash > 0 || (!m_isGrounded && !m_canAirDash))
+	if (isGrounded)
 	{
 		return;
 	}
 
-    if (!m_isGrounded && m_canAirDash)
-    {
-        m_canAirDash = false;
-    }
-
-    m_cooldownDash = DASH_COOLDOWN;
-	m_isDashing = true;
-	m_dashTimer = DASH_DURATION;
-	m_dashDirection = m_facingDirection;
-
-	m_velocity.x = m_dashDirection * DASH_SPEED;
-	m_velocity.y = 0.f;
-
-	isDash = false;
-}
-
-void Player::UpdateDash(const float dt)
-{
-	if (!m_isDashing)
+	float currentGravity = gravity * gravityScale;
+	if (m_velocity.y < 0.f && !isJumpHeld)
 	{
-		return;
+		currentGravity *= JUMP_RELEASE_GRAVITY_MULTIPLIER;
 	}
 
-	m_dashTimer -= dt;
-
-	m_velocity.x = m_dashDirection * DASH_SPEED;
-	m_velocity.y = 0.f;
-
-	if (m_dashTimer <= 0.f)
-	{
-		m_isDashing = false;
-	}
+	m_velocity.y += currentGravity * dt;
+	m_velocity.y = std::min(m_velocity.y, MAX_FALL_SPEED);
 }
 
 void Player::StopDash()
 {
-	m_isDashing = false;
-	m_dashTimer = 0.f;
+	m_stateManager.StopDash();
 	m_velocity.x = 0.f;
 }
 
 void Player::Move(
-    const PlayerInput& input, 
-    const float movementSpeedScale,
-    const float friction, 
-    const float dt
+	const float moveDirection,
+	const float movementSpeedScale,
+	const float friction,
+	const bool isGrounded,
+	const float dt
 )
 {
-    bool isMoving = false;
-    float moveDirection = 0.f;
+	const bool isMoving = moveDirection != 0.f;
 
-    if (input.moveLeft)
-    {
-        moveDirection -= 1.f;
-    }
-    if (input.moveRight)
-    {
-        moveDirection += 1.f;
-    }
+	if (isMoving)
+	{
+		m_velocity.x += moveDirection * ACCELERATION * dt;
+	}
 
-    if (moveDirection != 0.f)
-    {
-        isMoving = true;
-        m_velocity.x += moveDirection * ACCELERATION * dt;
-        m_facingDirection = moveDirection;
-    }
+	if (isGrounded && !isMoving)
+	{
+		if (m_velocity.x > 0.f)
+		{
+			m_velocity.x = std::max(0.f, m_velocity.x - friction * dt);
+		}
+		else if (m_velocity.x < 0.f)
+		{
+			m_velocity.x = std::min(0.f, m_velocity.x + friction * dt);
+		}
+	}
 
-    if (!isMoving && m_isGrounded)
-    {
-        if (m_velocity.x > 0.f)
-        {
-            m_velocity.x = std::max(0.f, m_velocity.x - friction * dt);
-        }
-        else if (m_velocity.x < 0.f)
-        {
-            m_velocity.x = std::min(0.f, m_velocity.x + friction * dt);
-        }
-    }
-
-    const float currentMaxSpeed = MAX_SPEED * movementSpeedScale;
-
-    m_velocity.x = std::clamp(m_velocity.x, -currentMaxSpeed, currentMaxSpeed);
+	const float currentMaxSpeed = MAX_SPEED * movementSpeedScale;
+	m_velocity.x = std::clamp(m_velocity.x, -currentMaxSpeed, currentMaxSpeed);
 }
 
 void Player::UpdateDirection()
 {
-    sf::Vector2f scale = m_sprite.getScale();
-    if (m_velocity.x > 10.f)
-    {
-        m_sprite.setScale({
-            std::abs(scale.x),
-            scale.y
-        });
-    }
-    else if (m_velocity.x < -10.f)
-    {
-        m_sprite.setScale({
-            -std::abs(scale.x),
-            scale.y
-        });
-    }
+	if (m_velocity.x > DIRECTION_SPEED_THRESHOLD)
+	{
+		m_facingDirection = 1.f;
+	}
+	else if (m_velocity.x < -DIRECTION_SPEED_THRESHOLD)
+	{
+		m_facingDirection = -1.f;
+	}
 }
 
 sf::FloatRect Player::GetBounds() const
 {
-    return m_sprite.getGlobalBounds();
+	return sf::FloatRect(
+		{m_position.x - m_collisionSize.x / 2.f, m_position.y - m_collisionSize.y / 2.f},
+		m_collisionSize
+	);
 }
 
-bool Player::GetIsGrounded() const
+bool Player::IsGrounded() const
 {
-    return m_isGrounded;
+	return m_stateManager.GetState().IsGrounded();
+}
+
+bool Player::IsDashing() const
+{
+	return m_stateManager.GetState().IsDashing();
 }
 
 sf::Vector2f Player::GetPosition() const
 {
-    return m_sprite.getPosition();
+	return m_position;
+}
+
+float Player::GetFacingDirection() const
+{
+	return m_facingDirection;
+}
+
+const PlayerState& Player::GetState() const
+{
+	return m_stateManager.GetState();
 }
 
 sf::Vector2f Player::GetVelocity() const
 {
-    return m_velocity;
+	return m_velocity;
 }
 
-void Player::SetIsGrounded(const bool newIsGrounded) 
+void Player::MoveBy(const sf::Vector2f offset)
 {
-    m_isGrounded = newIsGrounded;
-    if (m_isGrounded)
-    {
-        m_canAirJump = true;
-        m_canAirDash = true;
-    }
+	m_position += offset;
 }
 
-void Player::SetVelocity(const sf::Vector2f newVelocity) 
+void Player::ResolveHorizontalCollision(const float surfaceNormalX)
 {
-    m_velocity = newVelocity;
+	if (m_stateManager.GetState().IsDashing())
+	{
+		StopDash();
+		return;
+	}
+
+	if (m_velocity.x * surfaceNormalX < 0.f)
+	{
+		m_velocity.x = 0.f;
+	}
 }
 
-void Player::SetPosition(const sf::Vector2f newPosition) 
+void Player::ResolveVerticalCollision(const float surfaceNormalY)
 {
-    m_sprite.setPosition(newPosition);
+	if (m_velocity.y * surfaceNormalY < 0.f)
+	{
+		m_velocity.y = 0.f;
+	}
+}
+
+void Player::ApplyEnvironmentState(const EnvironmentState& environmentState)
+{
+	m_stateManager.ApplyPhysicsResult(environmentState.isGrounded, m_velocity.y);
+}
+
+void Player::SetVelocity(const sf::Vector2f newVelocity)
+{
+	m_velocity = newVelocity;
+}
+
+void Player::SetPosition(const sf::Vector2f newPosition)
+{
+	m_position = newPosition;
 }

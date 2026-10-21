@@ -1,46 +1,55 @@
 #pragma once
-#include <SFML/Graphics.hpp>
-#include "PlayerInput.h"
-#include "Liquid.h"
+
+#include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
+
+#include "Player/EnvironmentState.h"
+#include "Player/PlayerStateManager.h"
 
 class Player
 {
 private:
-    sf::Texture m_texture;
-    sf::Sprite m_sprite;
-    sf::Vector2f m_velocity;
-    float m_facingDirection;
-    bool m_isGrounded;
-    bool m_canAirJump;
-    bool m_isDashing;
-	float m_dashTimer;
-	float m_dashDirection;
-    bool m_canAirDash;
-    float m_cooldownDash;
-    void Move(const PlayerInput& input,  const float movementSpeedScale, const float friction, const float dt);
-    void UpdateDirection();
-    void Jump(bool& isJump, const bool allowsJump);
-    void ApplyGravity(const float gravity, const float gravityScale, const bool isJumpHeld, const float dt);
-    void StartDash(bool& isDash, const bool allowsDash);
-    void UpdateDash(const float dt);
+	sf::Vector2f m_position;
+	sf::Vector2f m_collisionSize;
+	sf::Vector2f m_velocity;
+	float m_facingDirection;
+	PlayerStateManager m_stateManager;
+
+	void Move(
+		float moveDirection,
+		float movementSpeedScale,
+		float friction,
+		bool isGrounded,
+		float dt
+	);
+	void UpdateDirection();
+	void ApplyGravity(
+		float gravity,
+		float gravityScale,
+		bool isJumpHeld,
+		bool isGrounded,
+		float dt
+	);
 
 public:
-    Player();
-    void Update(
-        PlayerInput& input, 
-        const float friction, 
-        const float gravity, 
-        const LiquidProperties liquidResult, 
-        const float dt
-    );
-    void Draw(sf::RenderWindow& window) const;
-    sf::FloatRect GetBounds() const;
-    sf::Vector2f GetVelocity() const;
-    sf::Vector2f GetPosition() const;
-    bool GetIsGrounded() const;
-    void SetVelocity(const sf::Vector2f newVelocity);
-    void SetPosition(const sf::Vector2f newPosition);
-    void SetIsGrounded(const bool newIsGrounded);
-    void StopDash();
+	Player(sf::Vector2f position, sf::Vector2f collisionSize);
 
+	void PushInput(const PlayerInputEvent& event);
+	void Update(const EnvironmentState& environmentState, float dt);
+
+	sf::FloatRect GetBounds() const;
+	sf::Vector2f GetVelocity() const;
+	sf::Vector2f GetPosition() const;
+	float GetFacingDirection() const;
+	const PlayerState& GetState() const;
+	bool IsGrounded() const;
+	bool IsDashing() const;
+
+	void MoveBy(sf::Vector2f offset);
+	void ResolveHorizontalCollision(float surfaceNormalX);
+	void ResolveVerticalCollision(float surfaceNormalY);
+	void ApplyEnvironmentState(const EnvironmentState& environmentState);
+	void SetVelocity(sf::Vector2f newVelocity);
+	void SetPosition(sf::Vector2f newPosition);
+	void StopDash();
 };
