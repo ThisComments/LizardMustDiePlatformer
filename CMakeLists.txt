@@ -8,15 +8,16 @@ find_package(SFML 3 COMPONENTS Graphics Window System CONFIG REQUIRED)
 
 add_executable(game
     src/main.cpp
-    src/Domain/Player/Player.cpp
-    src/Infrastructure/Game/Game.cpp
-    src/Application/World/World.cpp
-    src/Domain/Obstacle/Obstacle.cpp
-    src/Domain/Liquid/Liquid.cpp
-    src/Domain/Map/Map.cpp
-    src/Application/LiquidSystem/LiquidSystem.cpp
-    src/Application/CollisionSystem/CollisionSystem.cpp
-    src/Infrastructure/KeyboardHandler/KeyboardHandler.cpp
+    src/App/Game.cpp
+    src/Input/KeyboardHandler.cpp
+    src/Player/Player.cpp
+    src/Player/PlayerStateManager.cpp
+    src/World/CollisionSystem/CollisionSystem.cpp
+    src/World/LiquidSystem/LiquidSystem.cpp
+    src/World/Map/Map.cpp
+    src/World/Render/Render.cpp
+    src/World/World.cpp
+
 )
 
 target_include_directories(game PRIVATE
