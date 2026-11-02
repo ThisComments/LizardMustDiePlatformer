@@ -32,7 +32,7 @@ const std::array<TileProperties, TILE_TYPE_COUNT> TILE_PROPERTIES = {{
 	{false, 0.f, true, LAVA_MOVEMENT_MODIFIERS}
 }};
 
-const TileProperties& GetTileProperties(const TileType tileType)
+inline const TileProperties& GetTileProperties(const TileType tileType)
 {
 	const auto index = static_cast<std::size_t>(tileType);
 	return index < TILE_PROPERTIES.size() ? TILE_PROPERTIES[index] : TILE_PROPERTIES[0];
