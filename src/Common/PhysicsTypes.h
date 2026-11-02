@@ -8,4 +8,4 @@ struct MovementModifiers
 	bool allowsDash = true;
 };
 
-inline constexpr MovementModifiers DEFAULT_MOVEMENT_MODIFIERS = {1.f, 1.f, true, true};
+constexpr MovementModifiers DEFAULT_MOVEMENT_MODIFIERS = {1.f, 1.f, true, true};

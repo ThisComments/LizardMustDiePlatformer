@@ -2,7 +2,7 @@
 #include <exception>
 #include <iostream>
 
-#include "App/Game.h"
+#include "App/Game/Game.h"
 
 int main()
 {

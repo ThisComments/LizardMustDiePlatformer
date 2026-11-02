@@ -3,18 +3,23 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 
-#include "Player/Player.h"
-#include "View/PlayerRenderer/PlayerRenderer.h"
-#include "View/TileRenderer/TileRenderer.h"
-#include "World/Map/Map.h"
+#include "View/EntityRenderer/EntityRenderer.h"
+#include "View/MapRenderer/MapRenderer.h"
+#include "View/ParallaxBackground/ParallaxBackground.h"
+#include "Systems/RenderDataBuilder/RenderSnapshot.h"
 
 class WorldRenderer
 {
 private:
-	TileRenderer m_tileRenderer;
-	PlayerRenderer m_playerRenderer;
+	MapRenderer m_mapRenderer;
+	EntityRenderer m_entityRenderer;
+	ParallaxBackground m_parallaxBackground;
 
 public:
-	void Draw(const Map& map, const Player& player, sf::RenderTarget& target);
-	sf::Vector2f GetPlayerSpriteSize() const;
+	WorldRenderer(const sf::Vector2f worldSize);
+	void Draw(
+		const RenderSnapshot& renderSnapshot, 
+		sf::RenderTarget& target, 
+		const sf::View& camera
+	) const;
 };

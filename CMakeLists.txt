@@ -9,19 +9,21 @@ find_package(SFML 3 REQUIRED COMPONENTS Graphics)
 
 add_executable(game
     src/main.cpp
-    src/Infrastructure/LevelRepository.cpp
-    src/App/CameraController.cpp
-    src/App/Game.cpp
-    src/Input/KeyboardHandler.cpp
-    src/Player/Player.cpp
-    src/Player/PlayerStateManager.cpp
-    src/World/CollisionSystem/CollisionSystem.cpp
-    src/World/LiquidSystem/LiquidSystem.cpp
-    src/World/Map/Map.cpp
+    src/Infrastructure/LevelRepository/LevelRepository.cpp
+    src/Infrastructure/Input/KeyboardHandler.cpp
+    src/App/CameraController/CameraController.cpp
+    src/App/Game/Game.cpp
+    src/Model/Map/Map.cpp
+    src/Model/Player/Player.cpp
+    src/Model/Player/PlayerStateManager/PlayerStateManager.cpp
+    src/Systems/CollisionSystem/CollisionSystem.cpp
+    src/Systems/LiquidSystem/LiquidSystem.cpp
+    src/Systems/RenderDataBuilder/RenderDataBuilder.cpp
     src/World/World.cpp
-    src/View/PlayerRenderer/PlayerRenderer.cpp
-    src/View/TileRenderer/TileRenderer.cpp
+    src/View/EntityRenderer/EntityRenderer.cpp
+    src/View/MapRenderer/MapRenderer.cpp
     src/View/WorldRenderer/WorldRenderer.cpp
+    src/View/ParallaxBackground/ParallaxBackground.cpp
 )
 
 target_include_directories(game PRIVATE src)

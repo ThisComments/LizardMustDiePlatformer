@@ -2,20 +2,21 @@
 
 #include <utility>
 
-const float WORLD_GRAVITY = 1800.f;
-const sf::Vector2f PLAYER_START_POSITION = {300.f, 250.f};
+constexpr float WORLD_GRAVITY = 1800.f;
+constexpr sf::Vector2f PLAYER_START_POSITION = {300.f, 250.f};
+constexpr sf::Vector2f PLAYER_COLLISION_SIZE = {40.f, 80.f};
 
-World::World(Map map, const sf::Vector2f playerCollisionSize)
-	: m_map(std::move(map)),
-	  m_bounds(
-		{0.f, 0.f},
-		{
-			static_cast<float>(m_map.GetWidth() * TILE_SIZE),
-			static_cast<float>(m_map.GetHeight() * TILE_SIZE)
-		}
-	  ),
-	  m_gravity(WORLD_GRAVITY),
-	  m_player(PLAYER_START_POSITION, playerCollisionSize)
+World::World(Map map)
+	: 	m_map(std::move(map)),
+		m_bounds(
+			{0.f, 0.f},
+			{
+				static_cast<float>(m_map.GetWidth() * TILE_SIZE),
+				static_cast<float>(m_map.GetHeight() * TILE_SIZE)
+			}
+		),
+		m_gravity(WORLD_GRAVITY),
+		m_player(PLAYER_START_POSITION, PLAYER_COLLISION_SIZE)
 {
 	m_playerEnvironment.gravity = m_gravity;
 	m_playerEnvironment.movementModifiers = DEFAULT_MOVEMENT_MODIFIERS;
@@ -110,9 +111,4 @@ const Player& World::GetPlayer() const
 sf::FloatRect World::GetBounds() const
 {
 	return m_bounds;
-}
-
-sf::Vector2f World::GetPositionPlayer() const
-{
-	return m_player.GetPosition();
 }

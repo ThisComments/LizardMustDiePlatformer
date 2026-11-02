@@ -3,12 +3,12 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 
-#include "Input/PlayerInputEvent.h"
-#include "Player/EnvironmentState.h"
-#include "Player/Player.h"
-#include "World/CollisionSystem/CollisionSystem.h"
-#include "World/LiquidSystem/LiquidSystem.h"
-#include "World/Map/Map.h"
+#include "Infrastructure/Input/PlayerInputEvent.h"
+#include "Model/Player/EnvironmentState.h"
+#include "Model/Player/Player.h"
+#include "Systems/CollisionSystem/CollisionSystem.h"
+#include "Systems/LiquidSystem/LiquidSystem.h"
+#include "Model/Map/Map.h"
 
 class World
 {
@@ -29,7 +29,7 @@ private:
 	AxisCollisionResult MovePlayerVertically(float dt);
 
 public:
-	World(Map map, sf::Vector2f playerCollisionSize);
+	World(Map map);
 
 	void PushPlayerInput(const PlayerInputEvent& event);
 	void Update(float dt);
@@ -37,5 +37,4 @@ public:
 	const Map& GetMap() const;
 	const Player& GetPlayer() const;
 	sf::FloatRect GetBounds() const;
-	sf::Vector2f GetPositionPlayer() const;
 };

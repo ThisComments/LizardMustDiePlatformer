@@ -1,12 +1,20 @@
 #include "View/WorldRenderer/WorldRenderer.h"
 
-void WorldRenderer::Draw(const Map& map, const Player& player, sf::RenderTarget& target)
+constexpr sf::Color BACKGROUND_COLOR(135, 206, 235);
+
+WorldRenderer::WorldRenderer(const sf::Vector2f worldSize)
+	: 	m_parallaxBackground(worldSize)
 {
-	m_tileRenderer.Draw(map, target);
-	m_playerRenderer.Draw(player, target);
 }
 
-sf::Vector2f WorldRenderer::GetPlayerSpriteSize() const
+void WorldRenderer::Draw(
+	const RenderSnapshot& renderSnapshot, 
+	sf::RenderTarget& target, 
+	const sf::View& camera
+) const
 {
-	return m_playerRenderer.GetSpriteSize();
+	target.clear(BACKGROUND_COLOR);
+	m_parallaxBackground.Draw(target, camera);
+	m_mapRenderer.Draw(renderSnapshot.map, target);
+	m_entityRenderer.Draw(renderSnapshot.entities, target);
 }
