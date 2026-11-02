@@ -1,34 +1,40 @@
 #pragma once
-#include <SFML/Graphics.hpp>
-#include <vector>
-#include "../Obstacle/Obstacle.h"
-#include "../Liquid/Liquid.h"
-#include "../Player/Player.h"
-#include "../CollisionSystem/CollisionSystem.h"
-#include "../LiquidSystem/LiquidSystem.h"
+
+#include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
+
+#include "Infrastructure/Input/PlayerInputEvent.h"
+#include "Model/Player/EnvironmentState.h"
+#include "Model/Player/Player.h"
+#include "Systems/CollisionSystem/CollisionSystem.h"
+#include "Systems/LiquidSystem/LiquidSystem.h"
+#include "Model/Map/Map.h"
 
 class World
 {
 private:
-    sf::FloatRect m_bounds;
-    float m_gravity;
-    std::vector<Obstacle> m_obstacles;
-    std::vector<Liquid> m_liquids;
-    Player m_player;
-    EnvironmentState m_playerEnvironment;
-    CollisionSystem m_collisionSystem;
-    LiquidSystem m_liquidSystem;
-    void DrawObstacles(sf::RenderTarget& window) const;
-    void DrawLiquids(sf::RenderTarget& window) const;
-    EnvironmentState BuildEnvironmentState(
-        const CollisionResult& collisionResult,
-        const LiquidResult& liquidResult
-    ) const;
+	Map m_map;
+	sf::FloatRect m_bounds;
+	float m_gravity;
+	Player m_player;
+	EnvironmentState m_playerEnvironment;
+	CollisionSystem m_collisionSystem;
+	LiquidSystem m_liquidSystem;
+
+	EnvironmentState BuildEnvironmentState(
+		const CollisionResult& collisionResult,
+		const LiquidResult& liquidResult
+	) const;
+	void MovePlayerHorizontally(float dt);
+	AxisCollisionResult MovePlayerVertically(float dt);
 
 public:
-    World();
-    void Update(PlayerInput& input, const float dt);
-    void Draw(sf::RenderTarget& window) const;
-    const sf::FloatRect GetBounds() const;
-    const sf::Vector2f GetPositionPlayer() const;
+	World(Map map);
+
+	void PushPlayerInput(const PlayerInputEvent& event);
+	void Update(float dt);
+
+	const Map& GetMap() const;
+	const Player& GetPlayer() const;
+	sf::FloatRect GetBounds() const;
 };
