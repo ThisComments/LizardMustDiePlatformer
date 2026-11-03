@@ -5,7 +5,7 @@ ScreenManager::ScreenManager(const sf::Font& font, const sf::Vector2f screenSize
 		m_gameplay(font, screenSize),
 		m_pause(font, screenSize),
 		m_gameOver(font, screenSize),
-		//m_howToPlay(font, screenSize),
+		m_howToPlay(font, screenSize),
 		m_active(&m_mainMenu)
 {
 }
@@ -30,9 +30,9 @@ void ScreenManager::Show(const GameState state)
 			m_active = &m_gameOver;
 			break;
 
-		/*case GameState::HowToPlay:
+		case GameState::HowToPlay:
 			m_active = &m_howToPlay;
-			break;*/
+			break;
 	}
 
 	m_active->OnEnter();

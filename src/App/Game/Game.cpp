@@ -73,8 +73,8 @@ void Game::Update(const float deltaTime)
 		case GameState::GameOver:
 			break;
 
-		/*case GameState::HowToPlay:
-			break;*/
+		case GameState::HowToPlay:
+			break;
 	}
 }
 
@@ -122,7 +122,7 @@ void Game::ApplyCommand(const ScreenCommand command)
 		case ScreenCommand::ReturnToMenu:
 			if (m_state == GameState::Paused 
 				|| m_state == GameState::GameOver 
-				/*|| m_state == GameState::HowToPlay*/)
+				|| m_state == GameState::HowToPlay)
 			{
 				SetState(GameState::Menu);
 			}
@@ -149,12 +149,12 @@ void Game::ApplyCommand(const ScreenCommand command)
 			}
 			break;
 
-		/*case ScreenCommand::HowToPlay:
+		case ScreenCommand::HowToPlay:
 			if (m_state == GameState::Menu)
 			{
 				SetState(GameState::HowToPlay);
 			}
-			break;*/
+			break;
 	}
 }
 

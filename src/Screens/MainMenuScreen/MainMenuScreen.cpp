@@ -7,7 +7,7 @@
 namespace
 {
 	constexpr std::size_t ITEM_START = 0;
-	//constexpr std::size_t ITEM_HOW_TO_PLAY = 1;
+	constexpr std::size_t ITEM_HOW_TO_PLAY = 1;
 	constexpr std::size_t ITEM_EXIT = 2;
 	constexpr const char* TITLE = "РУСЫ ПРОТИВ ЯЩЕРОВ";
 }
@@ -32,10 +32,10 @@ ScreenCommand MainMenuScreen::HandleEvent(const sf::Event& event, const sf::Rend
 		return ScreenCommand::StartGame;
 	}
 
-	/*if (*activated == ITEM_HOW_TO_PLAY)
+	if (*activated == ITEM_HOW_TO_PLAY)
 	{
 		return ScreenCommand::HowToPlay;
-	}*/
+	}
 
 	if (*activated == ITEM_EXIT)
 	{

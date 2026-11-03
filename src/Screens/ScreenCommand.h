@@ -6,7 +6,7 @@ enum class ScreenCommand : std::uint8_t
 {
 	None,
 	StartGame,
-	//HowToPlay,
+	HowToPlay,
 	Pause,
 	Resume,
 	Restart,

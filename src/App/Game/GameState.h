@@ -8,7 +8,7 @@ enum class GameState : std::uint8_t
 	Playing,
 	Paused,
 	GameOver,
-	//HowToPlay
+	HowToPlay
 };
 
 enum class GameOverReason : std::uint8_t

@@ -10,7 +10,7 @@
 #include "Screens/GameplayScreen/GameplayScreen.h"
 #include "Screens/MainMenuScreen/MainMenuScreen.h"
 #include "Screens/PauseScreen/PauseScreen.h"
-//#include "Screens/HowToPlayScreen/HowToPlayScreen.h"
+#include "Screens/HowToPlayScreen/HowToPlayScreen.h"
 #include "Screens/Screen.h"
 
 class ScreenManager
@@ -20,7 +20,7 @@ private:
 	GameplayScreen m_gameplay;
 	PauseScreen m_pause;
 	GameOverScreen m_gameOver;
-	//HowToPlayScreen m_howToPlay;
+	HowToPlayScreen m_howToPlay;
 	Screen *m_active;
 
 public:
