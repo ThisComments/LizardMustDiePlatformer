@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cstdint>
+
 #include <SFML/Graphics/Rect.hpp>
-#include <SFML/System/Vector2.hpp>
 
 #include "Infrastructure/Input/PlayerInputEvent.h"
 #include "Model/Player/EnvironmentState.h"
@@ -10,11 +11,19 @@
 #include "Systems/LiquidSystem/LiquidSystem.h"
 #include "Model/Map/Map.h"
 
+enum class WorldResult : std::uint8_t
+{
+	None,
+	Victory,
+	Defeat
+};
+
 class World
 {
 private:
 	Map m_map;
 	sf::FloatRect m_bounds;
+	sf::FloatRect m_finishZone;
 	float m_gravity;
 	Player m_player;
 	EnvironmentState m_playerEnvironment;
@@ -27,12 +36,13 @@ private:
 	) const;
 	void MovePlayerHorizontally(float dt);
 	AxisCollisionResult MovePlayerVertically(float dt);
+	WorldResult EvaluateResult() const;
 
 public:
 	World(Map map);
 
 	void PushPlayerInput(const PlayerInputEvent& event);
-	void Update(float dt);
+	WorldResult Update(float dt);
 
 	const Map& GetMap() const;
 	const Player& GetPlayer() const;

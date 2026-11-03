@@ -1,27 +1,32 @@
 #pragma once
 
+#include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 
-#include "App/CameraController/CameraController.h"
-#include "Infrastructure/Input/KeyboardHandler.h"
-#include "Systems/RenderDataBuilder/RenderDataBuilder.h"
-#include "View/WorldRenderer/WorldRenderer.h"
-#include "World/World.h"
+#include "App/Game/GameState.h"
+#include "Screens/ScreenCommand.h"
+#include "Screens/ScreenManager/ScreenManager.h"
 
 class Game
 {
 private:
 	sf::RenderWindow m_window;
 	sf::Clock m_clock;
-	World m_world;
-	KeyboardHandler m_keyboardHandler;
-	RenderDataBuilder m_renderDataBuilder;
-	CameraController m_cameraController;
-	WorldRenderer m_worldRenderer;
+	sf::Font m_font;
+	ScreenManager m_screens;
+	GameState m_state;
+	GameOverReason m_gameOverReason;
 
 	void ProcessEvents();
-	void Render(const RenderSnapshot& snapshot);
+	void Update(float deltaTime);
+	void Render();
+
+	void ApplyCommand(ScreenCommand command);
+	void SetState(GameState state);
+	void StartSession();
+	void PauseSession();
+	void FinishSession(GameOverReason reason);
 
 public:
 	Game();

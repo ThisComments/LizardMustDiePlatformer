@@ -5,6 +5,8 @@
 constexpr float WORLD_GRAVITY = 1800.f;
 constexpr sf::Vector2f PLAYER_START_POSITION = {300.f, 250.f};
 constexpr sf::Vector2f PLAYER_COLLISION_SIZE = {40.f, 80.f};
+constexpr int FINISH_ZONE_WIDTH_TILES = 2;
+constexpr float PIT_DEFEAT_MARGIN = 100.f;
 
 World::World(Map map)
 	: 	m_map(std::move(map)),
@@ -13,6 +15,16 @@ World::World(Map map)
 			{
 				static_cast<float>(m_map.GetWidth() * TILE_SIZE),
 				static_cast<float>(m_map.GetHeight() * TILE_SIZE)
+			}
+		),
+		m_finishZone(
+			{
+				m_bounds.size.x - static_cast<float>(FINISH_ZONE_WIDTH_TILES * TILE_SIZE),
+				m_bounds.position.y
+			},
+			{
+				static_cast<float>(FINISH_ZONE_WIDTH_TILES * TILE_SIZE),
+				m_bounds.size.y
 			}
 		),
 		m_gravity(WORLD_GRAVITY),
@@ -27,11 +39,11 @@ void World::PushPlayerInput(const PlayerInputEvent& event)
 	m_player.PushInput(event);
 }
 
-void World::Update(const float dt)
+WorldResult World::Update(const float dt)
 {
 	if (dt <= 0.f)
 	{
-		return;
+		return WorldResult::None;
 	}
 	m_player.Update(m_playerEnvironment, dt);
 
@@ -46,6 +58,24 @@ void World::Update(const float dt)
 
 	m_playerEnvironment = BuildEnvironmentState(collisionResult, liquidResult);
 	m_player.ApplyEnvironmentState(m_playerEnvironment);
+
+	return EvaluateResult();
+}
+
+WorldResult World::EvaluateResult() const
+{
+	const float lowerBoundary = m_bounds.position.y + m_bounds.size.y;
+	if (m_player.GetPosition().y > lowerBoundary + PIT_DEFEAT_MARGIN)
+	{
+		return WorldResult::Defeat;
+	}
+
+	if (m_player.GetBounds().findIntersection(m_finishZone))
+	{
+		return WorldResult::Victory;
+	}
+
+	return WorldResult::None;
 }
 
 void World::MovePlayerHorizontally(const float dt)
