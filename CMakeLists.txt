@@ -13,6 +13,17 @@ add_executable(game
     src/Infrastructure/Input/KeyboardHandler.cpp
     src/App/CameraController/CameraController.cpp
     src/App/Game/Game.cpp
+    src/Screens/ScreenManager/ScreenManager.cpp
+    src/Screens/MainMenuScreen/MainMenuScreen.cpp
+    src/Screens/GameplayScreen/GameplayScreen.cpp
+    src/Screens/PauseScreen/PauseScreen.cpp
+    src/Screens/GameOverScreen/GameOverScreen.cpp
+    src/Screens/HowToPlayScreen/HowToPlayScreen.cpp
+    src/UI/TextUtils/TextUtils.cpp
+    src/UI/Button/Button.cpp
+    src/UI/Menu/Menu.cpp
+    src/UI/HUD/HUD.cpp
+    src/UI/Overlay/ScreenOverlay.cpp
     src/Model/Map/Map.cpp
     src/Model/Player/Player.cpp
     src/Model/Player/PlayerStateManager/PlayerStateManager.cpp
@@ -27,6 +38,8 @@ add_executable(game
 )
 
 target_include_directories(game PRIVATE src)
+
+target_compile_options(game PRIVATE -Werror=switch)
 
 target_link_libraries(game PRIVATE SFML::Graphics)
 

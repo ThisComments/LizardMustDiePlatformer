@@ -41,4 +41,5 @@ public:
     KeyboardHandler();
     void HandleEvent(const sf::Event& event);
     std::vector<PlayerInputEvent> TakeEvents();
+    void Reset();
 };

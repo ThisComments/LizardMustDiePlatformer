@@ -40,6 +40,12 @@ std::vector<PlayerInputEvent> KeyboardHandler::TakeEvents()
     return std::exchange(m_events, {});
 }
 
+void KeyboardHandler::Reset()
+{
+    m_keyDown.fill(false);
+    m_events.clear();
+}
+
 bool KeyboardHandler::IsActionHeld(const Action action) const
 {
     for (std::size_t i = 0; i < BINDING_COUNT; ++i)
