@@ -12,9 +12,13 @@ public:
 
 	virtual ScreenCommand HandleEvent(const sf::Event& event, const sf::RenderWindow& window) = 0;
 	virtual ScreenCommand Update(float deltaTime) = 0;
-	virtual void Render(sf::RenderWindow& window) = 0;
+	virtual void Render(sf::RenderWindow& window) const = 0;
 
 	virtual void OnEnter()
+	{
+	}
+
+	virtual void OnExit()
 	{
 	}
 

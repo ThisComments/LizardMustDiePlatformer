@@ -1,131 +1,174 @@
 #include "World/World.h"
 
+#include <algorithm>
+#include <cmath>
 #include <utility>
 
-constexpr float WORLD_GRAVITY = 1800.f;
-constexpr sf::Vector2f PLAYER_START_POSITION = {300.f, 250.f};
-constexpr sf::Vector2f PLAYER_COLLISION_SIZE = {40.f, 80.f};
-constexpr int FINISH_ZONE_WIDTH_TILES = 2;
-constexpr float PIT_DEFEAT_MARGIN = 100.f;
+#include "Model/Collectible/Collectible.h"
+#include "Model/Collectible/CollectibleDefs.h"
+#include "Resources/AssetPaths.h"
+#include "World/EntityContext.h"
 
-World::World(Map map)
-	: 	m_map(std::move(map)),
-		m_bounds(
-			{0.f, 0.f},
-			{
-				static_cast<float>(m_map.GetWidth() * TILE_SIZE),
-				static_cast<float>(m_map.GetHeight() * TILE_SIZE)
-			}
-		),
-		m_finishZone(
-			{
-				m_bounds.size.x - static_cast<float>(FINISH_ZONE_WIDTH_TILES * TILE_SIZE),
-				m_bounds.position.y
-			},
-			{
-				static_cast<float>(FINISH_ZONE_WIDTH_TILES * TILE_SIZE),
-				m_bounds.size.y
-			}
-		),
-		m_gravity(WORLD_GRAVITY),
-		m_player(PLAYER_START_POSITION, PLAYER_COLLISION_SIZE)
+namespace
 {
-	m_playerEnvironment.gravity = m_gravity;
-	m_playerEnvironment.movementModifiers = DEFAULT_MOVEMENT_MODIFIERS;
+	constexpr float WORLD_GRAVITY = 1800.f;
+	constexpr sf::Vector2f PLAYER_START_POSITION = {300.f, 250.f};
+	constexpr sf::Vector2f PLAYER_COLLISION_SIZE = {40.f, 80.f};
+	constexpr int FINISH_ZONE_WIDTH_TILES = 2;
+	constexpr float PIT_DEFEAT_MARGIN = 100.f;
+
+	// Spreads the idle animations of consecutive collectibles over the clip's duration.
+	constexpr float COLLECTIBLE_PHASE_STEP = 0.173f;
+}
+
+World::World(LevelData level, ResourceManager& resources)
+	: m_map(std::move(level.map)),
+	  m_bounds(
+		  {0.f, 0.f},
+		  {
+			  static_cast<float>(m_map.GetWidth() * TILE_SIZE),
+			  static_cast<float>(m_map.GetHeight() * TILE_SIZE)
+		  }
+	  ),
+	  m_finishZone(
+		  {
+			  m_bounds.size.x - static_cast<float>(FINISH_ZONE_WIDTH_TILES * TILE_SIZE),
+			  m_bounds.position.y
+		  },
+		  {
+			  static_cast<float>(FINISH_ZONE_WIDTH_TILES * TILE_SIZE),
+			  m_bounds.size.y
+		  }
+	  ),
+	  m_player(nullptr),
+	  m_resultReported(false)
+{
+	CreateEntities(level, resources);
+	ApplyPendingSpawns();
+}
+
+void World::CreateEntities(const LevelData& level, ResourceManager& resources)
+{
+	auto player = std::make_unique<Player>(
+		PLAYER_START_POSITION,
+		PLAYER_COLLISION_SIZE,
+		resources.GetSpriteSheet(AssetPaths::HeroSheet)
+	);
+	// The pointer is taken before the move; the object itself never changes its address.
+	m_player = player.get();
+	m_pendingSpawns.push_back(std::move(player));
+
+	float phase = 0.f;
+	for (const CollectibleSpawn& spawn : level.collectibles)
+	{
+		const sf::Vector2f center(
+			(static_cast<float>(spawn.col) + 0.5f) * static_cast<float>(TILE_SIZE),
+			(static_cast<float>(spawn.row) + 0.5f) * static_cast<float>(TILE_SIZE)
+		);
+		const SpriteSheetAsset& sheet = resources.GetSpriteSheet(GetCollectibleDef(spawn.type).spriteSheetPath);
+
+		m_pendingSpawns.push_back(std::make_unique<Collectible>(spawn.type, center, sheet, phase));
+		phase = std::fmod(phase + COLLECTIBLE_PHASE_STEP, 1.f);
+	}
 }
 
 void World::PushPlayerInput(const PlayerInputEvent& event)
 {
-	m_player.PushInput(event);
+	m_player->PushInput(event);
 }
 
-WorldResult World::Update(const float dt)
+void World::Update(const float dt)
 {
 	if (dt <= 0.f)
 	{
-		return WorldResult::None;
+		return;
 	}
-	m_player.Update(m_playerEnvironment, dt);
 
-	MovePlayerHorizontally(dt);
-	const AxisCollisionResult verticalResult = MovePlayerVertically(dt);
-
-	const CollisionResult collisionResult{
-		verticalResult.isGrounded,
-		verticalResult.groundFriction
+	const std::size_t firstNewEvent = m_events.size();
+	EntityContext context{
+		m_map,
+		m_collisionSystem,
+		m_liquidSystem,
+		WORLD_GRAVITY,
+		m_events,
+		m_pendingSpawns
 	};
-	const LiquidResult liquidResult = m_liquidSystem.Resolve(m_player.GetBounds(), m_map);
 
-	m_playerEnvironment = BuildEnvironmentState(collisionResult, liquidResult);
-	m_player.ApplyEnvironmentState(m_playerEnvironment);
+	for (const std::unique_ptr<Entity>& entity : m_entities)
+	{
+		entity->Update(dt, context);
+	}
 
-	return EvaluateResult();
+	// Triggers run after movement so pickups use the player's up-to-date position.
+	m_triggerSystem.Update(*m_player, m_entities, context);
+
+	UpdateStats(firstNewEvent);
+	ReportResult();
+
+	ApplyPendingSpawns();
+	RemoveFinishedEntities();
 }
 
-WorldResult World::EvaluateResult() const
+std::vector<WorldEvent> World::DrainEvents()
 {
+	std::vector<WorldEvent> events;
+	events.swap(m_events);
+	return events;
+}
+
+void World::ApplyPendingSpawns()
+{
+	for (std::unique_ptr<Entity>& entity : m_pendingSpawns)
+	{
+		m_entities.push_back(std::move(entity));
+	}
+	m_pendingSpawns.clear();
+}
+
+void World::RemoveFinishedEntities()
+{
+	m_entities.erase(
+		std::remove_if(
+			m_entities.begin(),
+			m_entities.end(),
+			[](const std::unique_ptr<Entity>& entity)
+			{
+				return entity->IsPendingRemoval();
+			}
+		),
+		m_entities.end()
+	);
+}
+
+void World::UpdateStats(const std::size_t firstNewEvent)
+{
+	for (std::size_t i = firstNewEvent; i < m_events.size(); ++i)
+	{
+		if (m_events[i].type == WorldEventType::CollectibleCollected)
+		{
+			m_stats.score += m_events[i].value;
+		}
+	}
+}
+
+void World::ReportResult()
+{
+	if (m_resultReported)
+	{
+		return;
+	}
+
 	const float lowerBoundary = m_bounds.position.y + m_bounds.size.y;
-	if (m_player.GetPosition().y > lowerBoundary + PIT_DEFEAT_MARGIN)
+	if (m_player->GetPosition().y > lowerBoundary + PIT_DEFEAT_MARGIN)
 	{
-		return WorldResult::Defeat;
+		m_resultReported = true;
+		m_events.push_back({WorldEventType::PlayerDefeated});
 	}
-
-	if (m_player.GetBounds().findIntersection(m_finishZone))
+	else if (m_player->GetBounds().findIntersection(m_finishZone))
 	{
-		return WorldResult::Victory;
+		m_resultReported = true;
+		m_events.push_back({WorldEventType::VictoryReached});
 	}
-
-	return WorldResult::None;
-}
-
-void World::MovePlayerHorizontally(const float dt)
-{
-	const sf::Vector2f velocity = m_player.GetVelocity();
-	const AxisCollisionResult result = m_collisionSystem.ResolveHorizontal(
-		m_player.GetBounds(),
-		m_map,
-		velocity.x * dt
-	);
-	m_player.MoveBy({result.allowedMovement, 0.f});
-	if (result.collided)
-	{
-		m_player.ResolveHorizontalCollision(result.normal);
-	}
-}
-
-AxisCollisionResult World::MovePlayerVertically(const float dt)
-{
-	const float verticalMovement = m_player.GetVelocity().y * dt;
-	const AxisCollisionResult result = m_collisionSystem.ResolveVertical(
-		m_player.GetBounds(),
-		m_map,
-		verticalMovement
-	);
-	m_player.MoveBy({0.f, result.allowedMovement});
-	if (result.collided)
-	{
-		m_player.ResolveVerticalCollision(result.normal);
-	}
-	return result;
-}
-
-EnvironmentState World::BuildEnvironmentState(
-	const CollisionResult& collisionResult,
-	const LiquidResult& liquidResult
-) const
-{
-	EnvironmentState environmentState;
-	environmentState.gravity = m_gravity;
-	environmentState.isGrounded = collisionResult.isGrounded;
-	environmentState.groundFriction = collisionResult.groundFriction;
-	environmentState.movementModifiers = DEFAULT_MOVEMENT_MODIFIERS;
-
-	if (liquidResult.isInLiquid)
-	{
-		environmentState.movementModifiers = liquidResult.modifiers;
-	}
-
-	return environmentState;
 }
 
 const Map& World::GetMap() const
@@ -133,9 +176,19 @@ const Map& World::GetMap() const
 	return m_map;
 }
 
+const std::vector<std::unique_ptr<Entity>>& World::GetEntities() const
+{
+	return m_entities;
+}
+
 const Player& World::GetPlayer() const
 {
-	return m_player;
+	return *m_player;
+}
+
+const WorldStats& World::GetStats() const
+{
+	return m_stats;
 }
 
 sf::FloatRect World::GetBounds() const

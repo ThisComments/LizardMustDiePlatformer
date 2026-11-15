@@ -1,21 +1,48 @@
 #include "Model/Player/Player.h"
 
 #include <algorithm>
+#include <cmath>
 
-const float JUMP_RELEASE_GRAVITY_MULTIPLIER = 2.f;
-const float DASH_SPEED = 1000.f;
-const float MAX_SPEED = 300.f;
-const float JUMP_SPEED = -600.f;
-const float ACCELERATION = 1800.f;
-const float MAX_FALL_SPEED = 1500.f;
-const float DIRECTION_SPEED_THRESHOLD = 10.f;
+#include "World/EntityContext.h"
 
-Player::Player(const sf::Vector2f position, const sf::Vector2f collisionSize)
-	: 	m_position(position),
-		m_collisionSize(collisionSize),
-		m_velocity({0.f, 0.f}),
-		m_facingDirection(1.f)
+namespace
 {
+	constexpr float JUMP_RELEASE_GRAVITY_MULTIPLIER = 2.f;
+	constexpr float DASH_SPEED = 1000.f;
+	constexpr float MAX_SPEED = 300.f;
+	constexpr float JUMP_SPEED = -650.f;
+	constexpr float ACCELERATION = 1800.f;
+	constexpr float MAX_FALL_SPEED = 1500.f;
+	constexpr float DIRECTION_SPEED_THRESHOLD = 10.f;
+
+	// Speeds above which the hero is shown running / rising instead of standing / falling.
+	constexpr float RUN_SPEED_THRESHOLD = 10.f;
+	constexpr float RISE_SPEED_THRESHOLD = 1.f;
+
+	constexpr const char* IDLE_CLIP = "idle";
+	constexpr const char* RUN_CLIP = "run";
+	constexpr const char* JUMP_CLIP = "jump";
+	constexpr const char* FALL_CLIP = "fall";
+
+	const SpriteSheetAsset& RequireHeroClips(const SpriteSheetAsset& sheet)
+	{
+		sheet.RequireClips({IDLE_CLIP, RUN_CLIP, JUMP_CLIP, FALL_CLIP});
+		return sheet;
+	}
+}
+
+Player::Player(
+	const sf::Vector2f position,
+	const sf::Vector2f collisionSize,
+	const SpriteSheetAsset& sheet
+)
+	: m_position(position),
+	  m_collisionSize(collisionSize),
+	  m_velocity({0.f, 0.f}),
+	  m_facingDirection(1.f),
+	  m_animation(RequireHeroClips(sheet), IDLE_CLIP)
+{
+	m_animation.SetPosition(GetFeetPosition());
 }
 
 void Player::PushInput(const PlayerInputEvent& event)
@@ -23,13 +50,35 @@ void Player::PushInput(const PlayerInputEvent& event)
 	m_stateManager.PushInput(event);
 }
 
-void Player::Update(const EnvironmentState& environmentState, const float dt)
+void Player::Update(const float dt, EntityContext& context)
 {
+	m_environment.gravity = context.gravity;
+
+	if (UpdateVelocity(dt))
+	{
+		context.events.push_back({WorldEventType::PlayerJumped});
+	}
+
+	// The order matters: horizontal first, then vertical, then liquid and the grounded state
+	// that the next update will use.
+	MoveHorizontally(dt, context);
+	const AxisCollisionResult verticalResult = MoveVertically(dt, context);
+	const LiquidResult liquidResult = context.liquidSystem.Resolve(GetBounds(), context.map);
+
+	m_environment = BuildEnvironmentState(verticalResult, liquidResult, context.gravity);
+	m_stateManager.ApplyPhysicsResult(m_environment.isGrounded, m_velocity.y);
+
+	UpdateAnimation(dt);
+}
+
+bool Player::UpdateVelocity(const float dt)
+{
+	bool jumpStarted = false;
 	const bool wasGrounded = m_stateManager.GetState().IsGrounded();
 
 	const PlayerStateActions actions = m_stateManager.ProcessInputQueue(
-		environmentState.movementModifiers.allowsJump,
-		environmentState.movementModifiers.allowsDash
+		m_environment.movementModifiers.allowsJump,
+		m_environment.movementModifiers.allowsDash
 	);
 	const PlayerState& state = m_stateManager.GetState();
 
@@ -42,14 +91,14 @@ void Player::Update(const EnvironmentState& environmentState, const float dt)
 	{
 		Move(
 			state.MoveDirection(),
-			environmentState.movementModifiers.movementSpeedScale,
-			environmentState.groundFriction,
+			m_environment.movementModifiers.movementSpeedScale,
+			m_environment.groundFriction,
 			wasGrounded,
 			dt
 		);
 		ApplyGravity(
-			environmentState.gravity,
-			environmentState.movementModifiers.gravityScale,
+			m_environment.gravity,
+			m_environment.movementModifiers.gravityScale,
 			state.jumpHeld,
 			wasGrounded,
 			dt
@@ -58,6 +107,7 @@ void Player::Update(const EnvironmentState& environmentState, const float dt)
 		if (actions.jumpStarted)
 		{
 			m_velocity.y = JUMP_SPEED;
+			jumpStarted = true;
 		}
 	}
 
@@ -70,6 +120,8 @@ void Player::Update(const EnvironmentState& environmentState, const float dt)
 	{
 		m_velocity.x = 0.f;
 	}
+
+	return jumpStarted;
 }
 
 void Player::ApplyGravity(
@@ -152,39 +204,65 @@ sf::FloatRect Player::GetBounds() const
 	);
 }
 
-bool Player::IsGrounded() const
-{
-	return m_stateManager.GetState().IsGrounded();
-}
-
-bool Player::IsDashing() const
-{
-	return m_stateManager.GetState().IsDashing();
-}
-
 sf::Vector2f Player::GetPosition() const
 {
 	return m_position;
 }
 
-float Player::GetFacingDirection() const
+RenderLayer Player::GetRenderLayer() const
 {
-	return m_facingDirection;
+	return RenderLayer::Characters;
 }
 
-const PlayerState& Player::GetState() const
+float Player::GetRenderDepth() const
 {
-	return m_stateManager.GetState();
+	return GetFeetPosition().y;
 }
 
-sf::Vector2f Player::GetVelocity() const
+bool Player::IsPendingRemoval() const
 {
-	return m_velocity;
+	// World keeps a non-owning pointer to the player, so it must stay for the whole level.
+	return false;
 }
 
-void Player::MoveBy(const sf::Vector2f offset)
+void Player::Draw(sf::RenderTarget& target) const
 {
-	m_position += offset;
+	m_animation.Draw(target);
+}
+
+sf::Vector2f Player::GetFeetPosition() const
+{
+	// The sprite may be larger than the hitbox: it is only aligned to it (centred, feet on its bottom).
+	return {m_position.x, m_position.y + m_collisionSize.y / 2.f};
+}
+
+void Player::MoveHorizontally(const float dt, const EntityContext& context)
+{
+	const AxisCollisionResult result = context.collisionSystem.ResolveHorizontal(
+		GetBounds(),
+		context.map,
+		m_velocity.x * dt
+	);
+	m_position.x += result.allowedMovement;
+	if (result.collided)
+	{
+		ResolveHorizontalCollision(result.normal);
+	}
+}
+
+AxisCollisionResult Player::MoveVertically(const float dt, const EntityContext& context)
+{
+	const AxisCollisionResult result = context.collisionSystem.ResolveVertical(
+		GetBounds(),
+		context.map,
+		m_velocity.y * dt
+	);
+	m_position.y += result.allowedMovement;
+	if (result.collided)
+	{
+		ResolveVerticalCollision(result.normal);
+	}
+	return result;
 }
 
 void Player::ResolveHorizontalCollision(const float surfaceNormalX)
@@ -209,17 +287,39 @@ void Player::ResolveVerticalCollision(const float surfaceNormalY)
 	}
 }
 
-void Player::ApplyEnvironmentState(const EnvironmentState& environmentState)
+EnvironmentState Player::BuildEnvironmentState(
+	const AxisCollisionResult& verticalResult,
+	const LiquidResult& liquidResult,
+	const float gravity
+) const
 {
-	m_stateManager.ApplyPhysicsResult(environmentState.isGrounded, m_velocity.y);
+	EnvironmentState environmentState;
+	environmentState.gravity = gravity;
+	environmentState.isGrounded = verticalResult.isGrounded;
+	environmentState.groundFriction = verticalResult.groundFriction;
+	environmentState.movementModifiers = DEFAULT_MOVEMENT_MODIFIERS;
+
+	if (liquidResult.isInLiquid)
+	{
+		environmentState.movementModifiers = liquidResult.modifiers;
+	}
+
+	return environmentState;
 }
 
-void Player::SetVelocity(const sf::Vector2f newVelocity)
+void Player::UpdateAnimation(const float dt)
 {
-	m_velocity = newVelocity;
-}
+	// The animation only mirrors the physical state; it never feeds back into it.
+	if (m_stateManager.GetState().IsGrounded())
+	{
+		m_animation.Play(std::abs(m_velocity.x) > RUN_SPEED_THRESHOLD ? RUN_CLIP : IDLE_CLIP);
+	}
+	else
+	{
+		m_animation.Play(m_velocity.y < -RISE_SPEED_THRESHOLD ? JUMP_CLIP : FALL_CLIP);
+	}
 
-void Player::SetPosition(const sf::Vector2f newPosition)
-{
-	m_position = newPosition;
+	m_animation.SetFacingRight(m_facingDirection >= 0.f);
+	m_animation.SetPosition(GetFeetPosition());
+	m_animation.Update(dt);
 }

@@ -1,34 +1,29 @@
 #pragma once
 
-#include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 
-#include "App/Game/GameState.h"
-#include "Screens/ScreenCommand.h"
+#include "Audio/AudioManager.h"
+#include "Resources/ProjectPaths.h"
+#include "Resources/ResourceManager.h"
 #include "Screens/ScreenManager/ScreenManager.h"
 
 class Game
 {
 private:
+	ProjectPaths m_paths;
 	sf::RenderWindow m_window;
 	sf::Clock m_clock;
-	sf::Font m_font;
-	ScreenManager m_screens;
-	GameState m_state;
-	GameOverReason m_gameOverReason;
+	ResourceManager m_resourceManager;
+	AudioManager m_audioManager;
+	ScreenManager m_screenManager;
 
 	void ProcessEvents();
 	void Update(float deltaTime);
 	void Render();
 
-	void ApplyCommand(ScreenCommand command);
-	void SetState(GameState state);
-	void StartSession();
-	void PauseSession();
-	void FinishSession(GameOverReason reason);
-
 public:
-	Game();
+	Game(ProjectPaths paths);
+
 	void Run();
 };

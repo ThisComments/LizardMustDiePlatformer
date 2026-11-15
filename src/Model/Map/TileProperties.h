@@ -5,6 +5,7 @@
 
 #include "Common/PhysicsTypes.h"
 #include "Model/Map/TileType.h"
+#include "Resources/AssetPaths.h"
 
 struct TileProperties
 {
@@ -12,6 +13,7 @@ struct TileProperties
 	float friction = 0.f;
 	bool isLiquid = false;
 	MovementModifiers movementModifiers;
+	const char* texturePath = nullptr;
 };
 
 constexpr float GROUND_FRICTION = 1800.f;
@@ -23,13 +25,13 @@ constexpr MovementModifiers WATER_MOVEMENT_MODIFIERS = {0.3f, 0.6f, true, false}
 constexpr MovementModifiers LAVA_MOVEMENT_MODIFIERS = {1.f, 0.4f, false, false};
 
 const std::array<TileProperties, TILE_TYPE_COUNT> TILE_PROPERTIES = {{
-	{false, 0.f, false, DEFAULT_MOVEMENT_MODIFIERS},
-	{true, GROUND_FRICTION, false, DEFAULT_MOVEMENT_MODIFIERS},
-	{true, STONE_FRICTION, false, DEFAULT_MOVEMENT_MODIFIERS},
-	{true, WOOD_PLANKS_FRICTION, false, DEFAULT_MOVEMENT_MODIFIERS},
-	{false, 0.f, true, WATER_MOVEMENT_MODIFIERS},
-	{true, ICE_FRICTION, false, DEFAULT_MOVEMENT_MODIFIERS},
-	{false, 0.f, true, LAVA_MOVEMENT_MODIFIERS}
+	{false, 0.f, false, DEFAULT_MOVEMENT_MODIFIERS, nullptr},
+	{true, GROUND_FRICTION, false, DEFAULT_MOVEMENT_MODIFIERS, AssetPaths::GroundTexture},
+	{true, STONE_FRICTION, false, DEFAULT_MOVEMENT_MODIFIERS, AssetPaths::StoneTexture},
+	{true, WOOD_PLANKS_FRICTION, false, DEFAULT_MOVEMENT_MODIFIERS, AssetPaths::WoodPlanksTexture},
+	{false, 0.f, true, WATER_MOVEMENT_MODIFIERS, AssetPaths::WaterTexture},
+	{true, ICE_FRICTION, false, DEFAULT_MOVEMENT_MODIFIERS, AssetPaths::IceTexture},
+	{false, 0.f, true, LAVA_MOVEMENT_MODIFIERS, AssetPaths::LavaTexture}
 }};
 
 inline const TileProperties& GetTileProperties(const TileType tileType)

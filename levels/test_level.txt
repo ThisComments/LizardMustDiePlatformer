@@ -38,3 +38,15 @@ S...................................S.....................................S
 S.........................................................................S
 SWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLS
 SSSSSSSSSSSSSSSSSSSSSSSSSSS....SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+[objects]
+coin 12 8
+coin 27 27
+coin 68 27 
+coin 24 21 
+coin 42 15 
+coin 69 14 
+coin 67 37 
+coin 58 5 
+coin 39 31 
+gem 40 31
+gem 20 5

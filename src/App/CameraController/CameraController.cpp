@@ -2,8 +2,16 @@
 
 #include <algorithm>
 
-constexpr float CAMERA_TRACKING_WIDTH = 600.f;
-constexpr float CAMERA_TRACKING_HEIGHT = 400.f;
+namespace
+{
+	constexpr float CAMERA_TRACKING_WIDTH = 600.f;
+	constexpr float CAMERA_TRACKING_HEIGHT = 400.f;
+
+	float ClampCenter(const float value, const float min, const float max)
+	{
+		return min > max ? (min + max) / 2.f : std::clamp(value, min, max);
+	}
+}
 
 CameraController::CameraController(const sf::Vector2f viewSize, const sf::FloatRect& worldBounds)
 	: 	m_view(sf::FloatRect({0.f, 0.f}, viewSize)),
@@ -48,8 +56,8 @@ void CameraController::Update(const sf::Vector2f targetPosition)
 	const float minCameraY = m_worldBounds.position.y + halfCameraHeight;
 	const float maxCameraY = m_worldBounds.position.y + m_worldBounds.size.y - halfCameraHeight;
 
-	cameraCenter.x = std::clamp(cameraCenter.x, minCameraX, maxCameraX);
-	cameraCenter.y = std::clamp(cameraCenter.y, minCameraY, maxCameraY);
+	cameraCenter.x = ClampCenter(cameraCenter.x, minCameraX, maxCameraX);
+	cameraCenter.y = ClampCenter(cameraCenter.y, minCameraY, maxCameraY);
 
 	m_view.setCenter(cameraCenter);
 }

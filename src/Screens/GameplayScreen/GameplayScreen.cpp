@@ -1,45 +1,38 @@
 #include "Screens/GameplayScreen/GameplayScreen.h"
 
-#include <filesystem>
-
 #include "Infrastructure/Input/PlayerInputEvent.h"
 #include "Infrastructure/LevelRepository/LevelRepository.h"
+#include "Resources/AssetPaths.h"
 
 namespace
 {
 	constexpr const char* DEFAULT_LEVEL_FILE = "test_level.txt";
 
-	constexpr int HUD_HEALTH = 100;
-	constexpr int HUD_MAX_HEALTH = 100;
-	constexpr int HUD_POTIONS = 3;
-	constexpr int HUD_LEVEL = 1;
-
-	std::filesystem::path GetDefaultLevelPath()
-	{
-#ifdef PLATFORMER_LEVELS_DIR
-		const std::filesystem::path levelsDir = PLATFORMER_LEVELS_DIR;
-#else
-		const std::filesystem::path levelsDir =
-			std::filesystem::path(__FILE__).parent_path().parent_path().parent_path() / "levels";
-#endif
-		return levelsDir / DEFAULT_LEVEL_FILE;
-	}
+	constexpr const char* JUMP_SOUND = "jump";
+	constexpr const char* COLLECT_SOUND = "collect";
+	constexpr const char* VICTORY_SOUND = "victory";
+	constexpr const char* DEFEAT_SOUND = "defeat";
 }
 
-World GameplayScreen::CreateWorld()
+World GameplayScreen::CreateWorld(ResourceManager& resources, const ProjectPaths& paths)
 {
-	return World(LevelRepository().Load(GetDefaultLevelPath()));
+	return World(LevelRepository().Load(paths.Levels() / DEFAULT_LEVEL_FILE), resources);
 }
 
-GameplayScreen::GameplayScreen(const sf::Font& font, const sf::Vector2f viewSize)
-	: 	m_viewSize(viewSize),
-		m_world(CreateWorld()),
-		m_cameraController(viewSize, m_world.GetBounds()),
-		m_worldRenderer(m_world.GetBounds().size),
-		m_hud(font)
+GameplayScreen::GameplayScreen(
+	ResourceManager& resources,
+	AudioManager& audio,
+	const ProjectPaths& paths,
+	const sf::Vector2f viewSize
+)
+	: 	m_audio(audio),
+		m_world(CreateWorld(resources, paths)),
+		m_camera(viewSize, m_world.GetBounds()),
+		m_worldRenderer(m_world, m_camera, resources),
+		m_hud(resources.GetFont(AssetPaths::UiFont))
 {
-	m_hud.SetData({HUD_HEALTH, HUD_MAX_HEALTH, HUD_POTIONS, HUD_LEVEL});
-	RefreshView();
+	m_hud.SetScore(m_world.GetStats().score);
+	m_camera.Update(m_world.GetPlayer().GetPosition());
 }
 
 ScreenCommand GameplayScreen::HandleEvent(const sf::Event& event, const sf::RenderWindow&)
@@ -47,6 +40,7 @@ ScreenCommand GameplayScreen::HandleEvent(const sf::Event& event, const sf::Rend
 	const auto* keyPressed = event.getIf<sf::Event::KeyPressed>();
 	if (keyPressed && keyPressed->code == sf::Keyboard::Key::Escape)
 	{
+		ReleaseInput();
 		return ScreenCommand::Pause;
 	}
 
@@ -61,36 +55,65 @@ ScreenCommand GameplayScreen::Update(const float deltaTime)
 		m_world.PushPlayerInput(inputEvent);
 	}
 
-	const WorldResult result = m_world.Update(deltaTime);
-	RefreshView();
+	m_world.Update(deltaTime);
+	m_camera.Update(m_world.GetPlayer().GetPosition());
 
-	switch (result)
+	const ScreenCommand command = ProcessWorldEvents();
+	if (command != ScreenCommand::None)
 	{
-		case WorldResult::None:
-			return ScreenCommand::None;
-
-		case WorldResult::Victory:
-			return ScreenCommand::Victory;
-
-		case WorldResult::Defeat:
-			return ScreenCommand::Defeat;
+		ReleaseInput();
 	}
-
-	return ScreenCommand::None;
+	return command;
 }
 
-void GameplayScreen::Render(sf::RenderWindow& window)
+void GameplayScreen::Render(sf::RenderWindow& window) const
 {
-	m_worldRenderer.Draw(m_snapshot, window, m_cameraController.GetView());
+	m_worldRenderer.Render(window);
+
+	window.setView(window.getDefaultView());
 	m_hud.Render(window);
 }
 
-void GameplayScreen::Restart()
+void GameplayScreen::OnEnter()
 {
-	m_world = CreateWorld();
-	m_cameraController = CameraController(m_viewSize, m_world.GetBounds());
-	m_keyboardHandler.Reset();
-	RefreshView();
+	m_audio.PlayMusic();
+}
+
+void GameplayScreen::OnExit()
+{
+	m_audio.StopMusic();
+}
+
+ScreenCommand GameplayScreen::ProcessWorldEvents()
+{
+	ScreenCommand command = ScreenCommand::None;
+
+	for (const WorldEvent& event : m_world.DrainEvents())
+	{
+		switch (event.type)
+		{
+			case WorldEventType::PlayerJumped:
+				m_audio.PlaySfx(JUMP_SOUND);
+				break;
+
+			case WorldEventType::CollectibleCollected:
+				m_audio.PlaySfx(COLLECT_SOUND);
+				m_hud.SetScore(m_world.GetStats().score);
+				break;
+
+			case WorldEventType::VictoryReached:
+				m_audio.PlaySfx(VICTORY_SOUND);
+				command = ScreenCommand::Victory;
+				break;
+
+			case WorldEventType::PlayerDefeated:
+				m_audio.PlaySfx(DEFEAT_SOUND);
+				command = ScreenCommand::Defeat;
+				break;
+		}
+	}
+
+	return command;
 }
 
 void GameplayScreen::ReleaseInput()
@@ -100,10 +123,4 @@ void GameplayScreen::ReleaseInput()
 	m_world.PushPlayerInput({PlayerInputEventType::MoveLeftReleased});
 	m_world.PushPlayerInput({PlayerInputEventType::MoveRightReleased});
 	m_world.PushPlayerInput({PlayerInputEventType::JumpReleased});
-}
-
-void GameplayScreen::RefreshView()
-{
-	m_snapshot = m_renderDataBuilder.Build(m_world);
-	m_cameraController.Update(m_snapshot.cameraTargetPosition);
 }

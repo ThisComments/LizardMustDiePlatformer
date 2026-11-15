@@ -15,7 +15,7 @@ namespace
 MainMenuScreen::MainMenuScreen(const sf::Font& font, const sf::Vector2f screenSize)
 	: 	m_font(font),
 		m_screenSize(screenSize),
-		m_menu(font, {"Рубить ящеров", "Как мечём махать?", "Демобилизоваться"}, screenSize)
+		m_menu(font, {"Рубить ящеров", "Как мечом махать?", "Демобилизоваться"}, screenSize)
 {
 }
 
@@ -50,7 +50,7 @@ ScreenCommand MainMenuScreen::Update(const float)
 	return ScreenCommand::None;
 }
 
-void MainMenuScreen::Render(sf::RenderWindow& window)
+void MainMenuScreen::Render(sf::RenderWindow& window) const
 {
 	window.setView(window.getDefaultView());
 	window.clear(UiStyle::SCREEN_BACKGROUND_COLOR);

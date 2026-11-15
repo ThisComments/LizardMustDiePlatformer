@@ -12,7 +12,7 @@ private:
 	sf::RectangleShape m_shape;
 
 public:
-	explicit ScreenOverlay(sf::Vector2f screenSize);
+	ScreenOverlay(sf::Vector2f screenSize);
 
 	void SetOpacity(std::uint8_t alpha);
 	void Render(sf::RenderTarget& target) const;

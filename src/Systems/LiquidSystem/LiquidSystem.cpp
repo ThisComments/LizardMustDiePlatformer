@@ -3,14 +3,13 @@
 #include <algorithm>
 #include <cmath>
 
-#include "Model/Map/MapConstants.h"
 #include "Model/Map/TileProperties.h"
 
 LiquidResult LiquidSystem::Resolve(const sf::FloatRect& playerBounds, const Map& map) const
 {
 	LiquidResult result;
 
-	const float tileSize = static_cast<float>(MapConstants::TileSize);
+	const float tileSize = static_cast<float>(TILE_SIZE);
 	const int firstCol = std::max(0, static_cast<int>(std::floor(playerBounds.position.x / tileSize)));
 	const int firstRow = std::max(0, static_cast<int>(std::floor(playerBounds.position.y / tileSize)));
 	const int lastCol = std::min(static_cast<int>(map.GetWidth()) - 1,

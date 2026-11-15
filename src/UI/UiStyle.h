@@ -17,7 +17,6 @@ namespace UiStyle
 	constexpr unsigned HINT_FONT_SIZE = 28;
 	constexpr unsigned BUTTON_FONT_SIZE = 40;
 	constexpr unsigned HUD_FONT_SIZE = 32;
-	constexpr float HUD_LINE_SPACING = 44.f;
 
 	constexpr std::uint8_t OVERLAY_ALPHA = 170;
 

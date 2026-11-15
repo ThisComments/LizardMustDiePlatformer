@@ -15,18 +15,19 @@ namespace
 	constexpr const char* HINT = "R - попробовать снова    Esc - изба";
 }
 
-GameOverScreen::GameOverScreen(const sf::Font& font, const sf::Vector2f screenSize)
+GameOverScreen::GameOverScreen(
+	const sf::Font& font,
+	const sf::Vector2f screenSize,
+	const GameOverReason reason,
+	AudioManager& audio
+)
 	: 	m_font(font),
 		m_screenSize(screenSize),
 		m_overlay(screenSize),
+		m_audio(audio),
 		m_menu(font, {"Ещё раз", "Вернуться в избу"}, screenSize),
-		m_reason(GameOverReason::Defeat)
+		m_reason(reason)
 {
-}
-
-void GameOverScreen::SetReason(const GameOverReason reason)
-{
-	m_reason = reason;
 }
 
 ScreenCommand GameOverScreen::HandleEvent(const sf::Event& event, const sf::RenderWindow& window)
@@ -68,7 +69,7 @@ ScreenCommand GameOverScreen::Update(const float)
 	return ScreenCommand::None;
 }
 
-void GameOverScreen::Render(sf::RenderWindow& window)
+void GameOverScreen::Render(sf::RenderWindow& window) const
 {
 	const bool isVictory = m_reason == GameOverReason::Victory;
 
@@ -103,6 +104,7 @@ void GameOverScreen::Render(sf::RenderWindow& window)
 void GameOverScreen::OnEnter()
 {
 	m_menu.Reset();
+	m_audio.StopMusic();
 }
 
 bool GameOverScreen::IsOverlay() const

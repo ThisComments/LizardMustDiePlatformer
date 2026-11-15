@@ -39,7 +39,7 @@ ScreenCommand HowToPlayScreen::Update(const float)
 	return ScreenCommand::None;
 }
 
-void HowToPlayScreen::Render(sf::RenderWindow& window)
+void HowToPlayScreen::Render(sf::RenderWindow& window) const
 {
 	window.setView(window.getDefaultView());
 	window.clear(UiStyle::SCREEN_BACKGROUND_COLOR);

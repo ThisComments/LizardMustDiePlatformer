@@ -1,74 +1,156 @@
 #include "Screens/ScreenManager/ScreenManager.h"
 
-ScreenManager::ScreenManager(const sf::Font& font, const sf::Vector2f screenSize)
-	: 	m_mainMenu(font, screenSize),
-		m_gameplay(font, screenSize),
-		m_pause(font, screenSize),
-		m_gameOver(font, screenSize),
-		m_howToPlay(font, screenSize),
-		m_active(&m_mainMenu)
+#include <utility>
+
+#include "Resources/AssetPaths.h"
+#include "Screens/GameOverScreen/GameOverScreen.h"
+#include "Screens/GameplayScreen/GameplayScreen.h"
+#include "Screens/HowToPlayScreen/HowToPlayScreen.h"
+#include "Screens/MainMenuScreen/MainMenuScreen.h"
+#include "Screens/PauseScreen/PauseScreen.h"
+
+ScreenManager::ScreenManager(
+	ResourceManager& resources,
+	AudioManager& audio,
+	const ProjectPaths& paths,
+	const sf::Vector2f screenSize
+)
+	: 	m_resources(resources),
+		m_audio(audio),
+		m_paths(paths),
+		m_font(resources.GetFont(AssetPaths::UiFont)),
+		m_screenSize(screenSize),
+		m_exitRequested(false)
 {
+	Push(CreateMainMenu());
 }
 
-void ScreenManager::Show(const GameState state)
+ScreenManager::~ScreenManager()
 {
-	switch (state)
+	while (!m_stack.empty())
 	{
-		case GameState::Menu:
-			m_active = &m_mainMenu;
-			break;
+		Pop();
+	}
+}
 
-		case GameState::Playing:
-			m_active = &m_gameplay;
-			break;
+void ScreenManager::HandleEvent(const sf::Event& event, const sf::RenderWindow& window)
+{
+	Apply(m_stack.back()->HandleEvent(event, window));
+}
 
-		case GameState::Paused:
-			m_active = &m_pause;
-			break;
+void ScreenManager::Update(const float deltaTime)
+{
+	Apply(m_stack.back()->Update(deltaTime));
+}
 
-		case GameState::GameOver:
-			m_active = &m_gameOver;
-			break;
-
-		case GameState::HowToPlay:
-			m_active = &m_howToPlay;
-			break;
+void ScreenManager::Render(sf::RenderWindow& window) const
+{
+	std::size_t first = m_stack.size() - 1;
+	while (first > 0 && m_stack[first]->IsOverlay())
+	{
+		--first;
 	}
 
-	m_active->OnEnter();
-}
-
-void ScreenManager::SetGameOverReason(const GameOverReason reason)
-{
-	m_gameOver.SetReason(reason);
-}
-
-void ScreenManager::RestartGameplay()
-{
-	m_gameplay.Restart();
-}
-
-void ScreenManager::ReleaseGameplayInput()
-{
-	m_gameplay.ReleaseInput();
-}
-
-ScreenCommand ScreenManager::HandleEvent(const sf::Event& event, const sf::RenderWindow& window)
-{
-	return m_active->HandleEvent(event, window);
-}
-
-ScreenCommand ScreenManager::Update(const float deltaTime)
-{
-	return m_active->Update(deltaTime);
-}
-
-void ScreenManager::Render(sf::RenderWindow& window)
-{
-	if (m_active->IsOverlay())
+	for (std::size_t i = first; i < m_stack.size(); ++i)
 	{
-		m_gameplay.Render(window);
+		m_stack[i]->Render(window);
 	}
+}
 
-	m_active->Render(window);
+bool ScreenManager::IsExitRequested() const
+{
+	return m_exitRequested;
+}
+
+std::unique_ptr<Screen> ScreenManager::CreateMainMenu() const
+{
+	return std::make_unique<MainMenuScreen>(m_font, m_screenSize);
+}
+
+std::unique_ptr<Screen> ScreenManager::CreateGameplay() const
+{
+	return std::make_unique<GameplayScreen>(m_resources, m_audio, m_paths, m_screenSize);
+}
+
+std::unique_ptr<Screen> ScreenManager::CreatePause() const
+{
+	return std::make_unique<PauseScreen>(m_font, m_screenSize, m_audio);
+}
+
+std::unique_ptr<Screen> ScreenManager::CreateHowToPlay() const
+{
+	return std::make_unique<HowToPlayScreen>(m_font, m_screenSize);
+}
+
+std::unique_ptr<Screen> ScreenManager::CreateGameOver(const bool isVictory) const
+{
+	return std::make_unique<GameOverScreen>(
+		m_font,
+		m_screenSize,
+		isVictory ? GameOverReason::Victory : GameOverReason::Defeat,
+		m_audio
+	);
+}
+
+void ScreenManager::Apply(const ScreenCommand command)
+{
+	switch (command)
+	{
+		case ScreenCommand::None:
+			break;
+
+		case ScreenCommand::StartGame:
+		case ScreenCommand::Restart:
+			ReplaceAll(CreateGameplay());
+			break;
+
+		case ScreenCommand::HowToPlay:
+			ReplaceAll(CreateHowToPlay());
+			break;
+
+		case ScreenCommand::Pause:
+			Push(CreatePause());
+			break;
+
+		case ScreenCommand::Resume:
+			Pop();
+			break;
+
+		case ScreenCommand::ReturnToMenu:
+			ReplaceAll(CreateMainMenu());
+			break;
+
+		case ScreenCommand::Victory:
+			Push(CreateGameOver(true));
+			break;
+
+		case ScreenCommand::Defeat:
+			Push(CreateGameOver(false));
+			break;
+
+		case ScreenCommand::Exit:
+			m_exitRequested = true;
+			break;
+	}
+}
+
+void ScreenManager::Push(std::unique_ptr<Screen> screen)
+{
+	m_stack.push_back(std::move(screen));
+	m_stack.back()->OnEnter();
+}
+
+void ScreenManager::Pop()
+{
+	m_stack.back()->OnExit();
+	m_stack.pop_back();
+}
+
+void ScreenManager::ReplaceAll(std::unique_ptr<Screen> screen)
+{
+	while (!m_stack.empty())
+	{
+		Pop();
+	}
+	Push(std::move(screen));
 }

@@ -1,38 +1,47 @@
 #pragma once
 
-#include <SFML/Graphics/Font.hpp>
 #include <SFML/System/Vector2.hpp>
 
 #include "App/CameraController/CameraController.h"
+#include "Audio/AudioManager.h"
 #include "Infrastructure/Input/KeyboardHandler.h"
+#include "Resources/ProjectPaths.h"
+#include "Resources/ResourceManager.h"
 #include "Screens/Screen.h"
-#include "Systems/RenderDataBuilder/RenderDataBuilder.h"
 #include "UI/HUD/HUD.h"
 #include "View/WorldRenderer/WorldRenderer.h"
 #include "World/World.h"
 
-class GameplayScreen : public Screen
+// Connects the world with the camera, the renderer, the HUD and audio.
+// Member order is the construction order: the world exists before the camera that needs its
+// bounds, and before the renderer that reads it.
+class GameplayScreen final : public Screen
 {
 private:
-	sf::Vector2f m_viewSize;
+	AudioManager& m_audio;
 	World m_world;
 	KeyboardHandler m_keyboardHandler;
-	RenderDataBuilder m_renderDataBuilder;
-	CameraController m_cameraController;
+	CameraController m_camera;
 	WorldRenderer m_worldRenderer;
-	RenderSnapshot m_snapshot;
 	HUD m_hud;
 
-	static World CreateWorld();
-	void RefreshView();
+	static World CreateWorld(ResourceManager& resources, const ProjectPaths& paths);
+
+	// Reacts to what happened during the update; returns the screen change it requires, if any.
+	ScreenCommand ProcessWorldEvents();
+	void ReleaseInput();
 
 public:
-	GameplayScreen(const sf::Font& font, sf::Vector2f viewSize);
+	GameplayScreen(
+		ResourceManager& resources,
+		AudioManager& audio,
+		const ProjectPaths& paths,
+		sf::Vector2f viewSize
+	);
 
 	ScreenCommand HandleEvent(const sf::Event& event, const sf::RenderWindow& window) override;
 	ScreenCommand Update(float deltaTime) override;
-	void Render(sf::RenderWindow& window) override;
-
-	void Restart();
-	void ReleaseInput();
+	void Render(sf::RenderWindow& window) const override;
+	void OnEnter() override;
+	void OnExit() override;
 };
