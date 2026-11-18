@@ -1,75 +1,110 @@
 #include "World/World.h"
 
 #include <algorithm>
-#include <cmath>
 #include <utility>
 
-#include "Model/Collectible/Collectible.h"
-#include "Model/Collectible/CollectibleDefs.h"
-#include "Resources/AssetPaths.h"
+#include "Model/Collectible/CollectibleConstants.h"
 #include "World/EntityContext.h"
 
 namespace
 {
 	constexpr float WORLD_GRAVITY = 1800.f;
-	constexpr sf::Vector2f PLAYER_START_POSITION = {300.f, 250.f};
-	constexpr sf::Vector2f PLAYER_COLLISION_SIZE = {40.f, 80.f};
-	constexpr int FINISH_ZONE_WIDTH_TILES = 2;
+	constexpr float CELL_CENTER_OFFSET = 0.5f;
 	constexpr float PIT_DEFEAT_MARGIN = 100.f;
 
-	// Spreads the idle animations of consecutive collectibles over the clip's duration.
-	constexpr float COLLECTIBLE_PHASE_STEP = 0.173f;
+	sf::Vector2f CellToWorldCenter(const CellCoordinates cell)
+	{
+		const float tileSize = static_cast<float>(TILE_SIZE);
+		return {
+			(static_cast<float>(cell.col) + CELL_CENTER_OFFSET) * tileSize,
+			(static_cast<float>(cell.row) + CELL_CENTER_OFFSET) * tileSize
+		};
+	}
+
+	sf::FloatRect ZoneToWorldRect(const TileZone& zone)
+	{
+		const float tileSize = static_cast<float>(TILE_SIZE);
+		return sf::FloatRect(
+			{
+				static_cast<float>(zone.col) * tileSize,
+				static_cast<float>(zone.row) * tileSize
+			},
+			{
+				static_cast<float>(zone.width) * tileSize,
+				static_cast<float>(zone.height) * tileSize
+			}
+		);
+	}
 }
 
-World::World(LevelData level, ResourceManager& resources)
-	: m_map(std::move(level.map)),
-	  m_bounds(
-		  {0.f, 0.f},
-		  {
-			  static_cast<float>(m_map.GetWidth() * TILE_SIZE),
-			  static_cast<float>(m_map.GetHeight() * TILE_SIZE)
-		  }
-	  ),
-	  m_finishZone(
-		  {
-			  m_bounds.size.x - static_cast<float>(FINISH_ZONE_WIDTH_TILES * TILE_SIZE),
-			  m_bounds.position.y
-		  },
-		  {
-			  static_cast<float>(FINISH_ZONE_WIDTH_TILES * TILE_SIZE),
-			  m_bounds.size.y
-		  }
-	  ),
-	  m_player(nullptr),
-	  m_resultReported(false)
+World::World(LevelData level)
+	: 	m_map(std::move(level.map)),
+		m_bounds(
+			{ 0.f, 0.f },
+			{
+				static_cast<float>(m_map.GetWidth() * TILE_SIZE),
+				static_cast<float>(m_map.GetHeight() * TILE_SIZE)
+			}
+		),
+		m_finishZone(ZoneToWorldRect(level.finishZone)),
+		m_player(nullptr),
+		m_resultReported(false)
 {
-	CreateEntities(level, resources);
+	CreateEntities(level);
 	ApplyPendingSpawns();
+	SyncPlayerStats();
 }
 
-void World::CreateEntities(const LevelData& level, ResourceManager& resources)
+void World::CreateEntities(const LevelData& level)
 {
-	auto player = std::make_unique<Player>(
-		PLAYER_START_POSITION,
-		PLAYER_COLLISION_SIZE,
-		resources.GetSpriteSheet(AssetPaths::HeroSheet)
-	);
-	// The pointer is taken before the move; the object itself never changes its address.
-	m_player = player.get();
-	m_pendingSpawns.push_back(std::move(player));
+	auto playerEntity = std::make_unique<Player>(CellToWorldCenter(level.playerSpawn));
+	m_player = playerEntity.get();
+	m_pendingSpawns.push_back(std::move(playerEntity));
 
-	float phase = 0.f;
 	for (const CollectibleSpawn& spawn : level.collectibles)
 	{
-		const sf::Vector2f center(
-			(static_cast<float>(spawn.col) + 0.5f) * static_cast<float>(TILE_SIZE),
-			(static_cast<float>(spawn.row) + 0.5f) * static_cast<float>(TILE_SIZE)
-		);
-		const SpriteSheetAsset& sheet = resources.GetSpriteSheet(GetCollectibleDef(spawn.type).spriteSheetPath);
-
-		m_pendingSpawns.push_back(std::make_unique<Collectible>(spawn.type, center, sheet, phase));
-		phase = std::fmod(phase + COLLECTIBLE_PHASE_STEP, 1.f);
+		const sf::Vector2f center = CellToWorldCenter({ spawn.col, spawn.row });
+		std::unique_ptr<Collectible> collectible = CreateCollectible(spawn.type, center);
+		if (collectible != nullptr)
+		{
+			m_pendingSpawns.push_back(std::move(collectible));
+		}
 	}
+}
+
+std::unique_ptr<Collectible> World::CreateCollectible(
+	const CollectibleType type,
+	const sf::Vector2f position
+) const
+{
+	switch (type)
+	{
+		case COLLECTIBLE_COIN:
+			return std::make_unique<Collectible>(
+				position,
+				CollectibleConstants::HITBOX_SIZE,
+				VISUAL_COIN,
+				CollectibleEffect{ EFFECT_SCORE, CollectibleConstants::COIN_SCORE_VALUE, 0.f }
+			);
+
+		case COLLECTIBLE_GEM:
+			return std::make_unique<Collectible>(
+				position,
+				CollectibleConstants::HITBOX_SIZE,
+				VISUAL_GEM,
+				CollectibleEffect{ EFFECT_SCORE, CollectibleConstants::GEM_SCORE_VALUE, 0.f }
+			);
+
+		case COLLECTIBLE_SPEED_POTION:
+			return std::make_unique<Collectible>(
+				position,
+				CollectibleConstants::HITBOX_SIZE,
+				VISUAL_SPEED_POTION,
+				CollectibleEffect{ EFFECT_SPEED_BOOST, CollectibleConstants::DEFAULT_SPEED_BOOST_MULTIPLIER, CollectibleConstants::DEFAULT_SPEED_BOOST_DURATION }
+			);
+	}
+
+	return nullptr;
 }
 
 void World::PushPlayerInput(const PlayerInputEvent& event)
@@ -84,7 +119,6 @@ void World::Update(const float dt)
 		return;
 	}
 
-	const std::size_t firstNewEvent = m_events.size();
 	EntityContext context{
 		m_map,
 		m_collisionSystem,
@@ -99,14 +133,78 @@ void World::Update(const float dt)
 		entity->Update(dt, context);
 	}
 
-	// Triggers run after movement so pickups use the player's up-to-date position.
-	m_triggerSystem.Update(*m_player, m_entities, context);
-
-	UpdateStats(firstNewEvent);
+	ProcessCollectibles();
+	SyncPlayerStats();
 	ReportResult();
 
 	ApplyPendingSpawns();
 	RemoveFinishedEntities();
+}
+
+void World::ProcessCollectibles()
+{
+	const std::vector<Collectible*> triggered =
+		m_triggerSystem.FindTriggeredCollectibles(*m_player, m_entities);
+
+	for (Collectible* collectible : triggered)
+	{
+		ActivateCollectible(*collectible);
+	}
+}
+
+void World::ActivateCollectible(Collectible& collectible)
+{
+	if (collectible.IsCollected())
+	{
+		return;
+	}
+
+	for (const CollectibleEffect& effect : collectible.GetEffects())
+	{
+		ApplyCollectibleEffect(effect);
+	}
+
+	collectible.MarkCollected();
+}
+
+void World::ApplyCollectibleEffect(const CollectibleEffect& effect)
+{
+	switch (effect.type)
+	{
+		case EFFECT_NONE:
+			break;
+
+		case EFFECT_SCORE:
+		{
+			const int points = static_cast<int>(effect.value);
+			m_stats.score += points;
+			m_events.push_back({ EVENT_COLLECTIBLE_COLLECTED, points });
+			break;
+		}
+
+		case EFFECT_HEAL:
+		{
+			const int healAmount = static_cast<int>(effect.value);
+			if (m_player->Heal(healAmount))
+			{
+				m_events.push_back({ EVENT_PLAYER_HEALED, healAmount });
+			}
+			break;
+		}
+
+		case EFFECT_SPEED_BOOST:
+			m_player->ApplySpeedBoost(effect.value, effect.duration);
+			m_events.push_back({ EVENT_COLLECTIBLE_COLLECTED, 0 });
+			break;
+	}
+}
+
+void World::SyncPlayerStats()
+{
+	m_stats.playerHealth = m_player->GetHealth();
+	m_stats.playerMaxHealth = m_player->GetMaxHealth();
+	m_stats.healCooldown = m_player->GetHealCooldown();
+	m_stats.dashCooldown = m_player->GetDashCooldown();
 }
 
 std::vector<WorldEvent> World::DrainEvents()
@@ -140,17 +238,6 @@ void World::RemoveFinishedEntities()
 	);
 }
 
-void World::UpdateStats(const std::size_t firstNewEvent)
-{
-	for (std::size_t i = firstNewEvent; i < m_events.size(); ++i)
-	{
-		if (m_events[i].type == WorldEventType::CollectibleCollected)
-		{
-			m_stats.score += m_events[i].value;
-		}
-	}
-}
-
 void World::ReportResult()
 {
 	if (m_resultReported)
@@ -159,15 +246,15 @@ void World::ReportResult()
 	}
 
 	const float lowerBoundary = m_bounds.position.y + m_bounds.size.y;
-	if (m_player->GetPosition().y > lowerBoundary + PIT_DEFEAT_MARGIN)
+	if (!m_player->IsAlive() || m_player->GetPosition().y > lowerBoundary + PIT_DEFEAT_MARGIN)
 	{
 		m_resultReported = true;
-		m_events.push_back({WorldEventType::PlayerDefeated});
+		m_events.push_back({ EVENT_PLAYER_DEFEATED, 0 });
 	}
 	else if (m_player->GetBounds().findIntersection(m_finishZone))
 	{
 		m_resultReported = true;
-		m_events.push_back({WorldEventType::VictoryReached});
+		m_events.push_back({ EVENT_VICTORY_REACHED, 0 });
 	}
 }
 

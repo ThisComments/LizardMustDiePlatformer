@@ -8,7 +8,6 @@
 ParallaxBackground::ParallaxBackground(ResourceManager& resources, const sf::Vector2f worldSize)
     :   m_worldSize(worldSize)
 {
-    // The farthest layer (last in the config) is drawn first.
     for (auto it = ParallaxConstants::LAYERS.rbegin(); it != ParallaxConstants::LAYERS.rend(); ++it)
     {
         m_layers.push_back({&resources.GetTexture(it->texturePath), it->parallaxFactor, it->isHorizontalRepeat});

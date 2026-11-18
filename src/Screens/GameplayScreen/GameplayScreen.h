@@ -12,9 +12,6 @@
 #include "View/WorldRenderer/WorldRenderer.h"
 #include "World/World.h"
 
-// Connects the world with the camera, the renderer, the HUD and audio.
-// Member order is the construction order: the world exists before the camera that needs its
-// bounds, and before the renderer that reads it.
 class GameplayScreen final : public Screen
 {
 private:
@@ -25,16 +22,15 @@ private:
 	WorldRenderer m_worldRenderer;
 	HUD m_hud;
 
-	static World CreateWorld(ResourceManager& resources, const ProjectPaths& paths);
+	static World CreateWorld(const ProjectPaths& paths);
 
-	// Reacts to what happened during the update; returns the screen change it requires, if any.
 	ScreenCommand ProcessWorldEvents();
 	void ReleaseInput();
 
 public:
 	GameplayScreen(
 		ResourceManager& resources,
-		AudioManager& audio,
+		AudioManager& audioManager,
 		const ProjectPaths& paths,
 		sf::Vector2f viewSize
 	);

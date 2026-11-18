@@ -11,16 +11,13 @@
 #include "Model/Map/TileType.h"
 #include "Resources/ResourceManager.h"
 
-// Draws the tiles of a Map. Which texture a tile uses comes from TileProperties.
 class MapRenderer
 {
 private:
-	// One prototype sprite per drawable tile type, already scaled to TILE_SIZE.
 	std::array<std::optional<sf::Sprite>, TILE_TYPE_COUNT> m_tileSprites;
 
 public:
 	MapRenderer(ResourceManager& resources);
 
-	// Draws only the tiles that intersect the view.
 	void Draw(sf::RenderTarget& target, const Map& map, const sf::View& view) const;
 };

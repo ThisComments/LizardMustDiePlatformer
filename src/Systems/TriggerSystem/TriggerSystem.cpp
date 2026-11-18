@@ -1,27 +1,34 @@
 #include "Systems/TriggerSystem/TriggerSystem.h"
 
-#include "Model/Entity/Triggerable.h"
+#include "Model/Collectible/Collectible.h"
 #include "Model/Player/Player.h"
 
-void TriggerSystem::Update(
+std::vector<Collectible*> TriggerSystem::FindTriggeredCollectibles(
 	const Player& player,
-	const std::vector<std::unique_ptr<Entity>>& entities,
-	EntityContext& context
+	const std::vector<std::unique_ptr<Entity>>& entities
 ) const
 {
+	std::vector<Collectible*> triggered;
 	const sf::FloatRect playerBounds = player.GetBounds();
 
 	for (const std::unique_ptr<Entity>& entity : entities)
 	{
-		auto* trigger = dynamic_cast<Triggerable*>(entity.get());
-		if (trigger == nullptr)
+		if (entity->IsPendingRemoval())
 		{
 			continue;
 		}
 
-		if (playerBounds.findIntersection(trigger->GetTriggerBounds()))
+		auto* collectible = dynamic_cast<Collectible*>(entity.get());
+		if (collectible == nullptr || collectible->IsCollected())
 		{
-			trigger->OnPlayerEnter(context);
+			continue;
+		}
+
+		if (playerBounds.findIntersection(collectible->GetTriggerBounds()))
+		{
+			triggered.push_back(collectible);
 		}
 	}
+
+	return triggered;
 }

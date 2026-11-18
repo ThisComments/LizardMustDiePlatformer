@@ -1,19 +1,17 @@
 #pragma once
 
-#include <cstdint>
-
-// Facts about things that happened in the world. Gameplay code only reports them;
-// reactions (sound, HUD, screen changes) are decided by whoever consumes the events.
-enum class WorldEventType : std::uint8_t
+enum WorldEventType
 {
-	PlayerJumped,
-	CollectibleCollected,
-	VictoryReached,
-	PlayerDefeated
+	EVENT_PLAYER_JUMPED,
+	EVENT_COLLECTIBLE_COLLECTED,
+	EVENT_PLAYER_DAMAGED,
+	EVENT_PLAYER_HEALED,
+	EVENT_VICTORY_REACHED,
+	EVENT_PLAYER_DEFEATED,
 };
 
 struct WorldEvent
 {
 	WorldEventType type;
-	int value = 0;  // e.g. points for CollectibleCollected
+	int value = 0;
 };

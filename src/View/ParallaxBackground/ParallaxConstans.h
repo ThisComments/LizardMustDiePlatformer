@@ -13,7 +13,6 @@ namespace ParallaxConstants
 		bool isHorizontalRepeat;
 	};
 
-	// Listed front to back; the renderer draws them in reverse so the farthest comes first.
 	constexpr std::array<ParallaxLayerConfig, 3> LAYERS =
 	{{
 		{AssetPaths::ParallaxLayer1, 0.8f, true},

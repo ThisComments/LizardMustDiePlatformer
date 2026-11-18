@@ -1,7 +1,10 @@
 #pragma once
 
-// Statistics of the current level. The single source of truth for what the HUD shows.
 struct WorldStats
 {
 	int score = 0;
+	int playerHealth = 100;
+	int playerMaxHealth = 100;
+	float healCooldown = 0.f;
+	float dashCooldown = 0.f;
 };

@@ -8,11 +8,21 @@ namespace
 {
 	constexpr std::size_t ITEM_RESTART = 0;
 	constexpr std::size_t ITEM_MENU = 1;
-	constexpr const char* VICTORY_TITLE = "ПОБЕДА!";
-	constexpr const char* VICTORY_MESSAGE = "Уровень пройден";
-	constexpr const char* DEFEAT_TITLE = "ПОРАЖЕНИЕ";
-	constexpr const char* DEFEAT_MESSAGE = "Вы упали в пропасть";
-	constexpr const char* HINT = "R - попробовать снова    Esc - изба";
+
+	constexpr const char* VICTORY_TITLE = "ЯЩЕРЫ РАЗБИТЫ!";
+	constexpr const char* VICTORY_MESSAGE = "Земли русов очищеныn\nот скверны!";
+	constexpr const char* DEFEAT_TITLE = "БОГАТЫРЬ ПАЛ";
+	constexpr const char* DEFEAT_MESSAGE = "Ящеры одолели дружину\nв этом бою...";
+	constexpr const char* HINT = "R — новый поход    Esc — вернуться в избу";
+
+	float CalculateGameOverMenuY(const sf::Vector2f screenSize)
+	{
+		const sf::Vector2f cardPos = ScreenLayout::CardPosition(
+			screenSize,
+			ScreenLayout::GAME_OVER_CARD_SIZE
+		);
+		return cardPos.y + 275.f;
+	}
 }
 
 GameOverScreen::GameOverScreen(
@@ -25,7 +35,18 @@ GameOverScreen::GameOverScreen(
 		m_screenSize(screenSize),
 		m_overlay(screenSize),
 		m_audio(audio),
-		m_menu(font, {"Ещё раз", "Вернуться в избу"}, screenSize),
+		m_menu(
+			font,
+			{
+				{
+					reason == GameOverReason::Victory ? "НОВЫЙ ПОХОД" : "ОТОМСТИТЬ ЯЩЕРАМ",
+					reason == GameOverReason::Victory ? PS_BUTTON_THEME_GOLD : PS_BUTTON_THEME_SUCCESS
+				},
+				{ "ВЫЙТИ В ИЗБУ", PS_BUTTON_THEME_DANGER }
+			},
+			screenSize,
+			CalculateGameOverMenuY(screenSize)
+		),
 		m_reason(reason)
 {
 }
@@ -74,30 +95,55 @@ void GameOverScreen::Render(sf::RenderWindow& window) const
 	const bool isVictory = m_reason == GameOverReason::Victory;
 
 	m_overlay.Render(window);
+
+	const sf::Vector2f cardPos = ScreenLayout::CardPosition(
+		m_screenSize,
+		ScreenLayout::GAME_OVER_CARD_SIZE
+	);
+	DrawCard(window, cardPos, ScreenLayout::GAME_OVER_CARD_SIZE);
+
 	DrawCenteredText(
 		window,
 		m_font,
 		isVictory ? VICTORY_TITLE : DEFEAT_TITLE,
-		UiStyle::TITLE_FONT_SIZE,
-		ScreenLayout::TitleCenter(m_screenSize),
+		UiStyle::CARD_TITLE_FONT_SIZE,
+		{ m_screenSize.x / 2.f, cardPos.y + 62.f },
 		isVictory ? UiStyle::VICTORY_COLOR : UiStyle::DEFEAT_COLOR
 	);
+	DrawDivider(
+		window,
+		{ m_screenSize.x / 2.f, cardPos.y + 108.f },
+		ScreenLayout::GAME_OVER_CARD_SIZE.x - 80.f
+	);
+
+	const sf::Vector2f bannerSize = { ScreenLayout::GAME_OVER_CARD_SIZE.x - 90.f, 105.f };
+	const sf::Vector2f bannerPos = { cardPos.x + 45.f, cardPos.y + 135.f };
+	DrawInsetPanel(
+		window,
+		bannerPos,
+		bannerSize,
+		UiStyle::PANEL_FILL_COLOR,
+		isVictory ? UiStyle::CARD_OUTLINE_COLOR : UiStyle::DEFEAT_COLOR
+	);
+
 	DrawCenteredText(
 		window,
 		m_font,
 		isVictory ? VICTORY_MESSAGE : DEFEAT_MESSAGE,
 		UiStyle::MESSAGE_FONT_SIZE,
-		ScreenLayout::MessageCenter(m_screenSize),
-		UiStyle::TEXT_COLOR
+		bannerPos + bannerSize / 2.f,
+		isVictory ? UiStyle::TEXT_COLOR : UiStyle::DEFEAT_MESSAGE_COLOR
 	);
+
 	m_menu.Render(window);
+
 	DrawCenteredText(
 		window,
 		m_font,
 		HINT,
 		UiStyle::HINT_FONT_SIZE,
-		ScreenLayout::HintCenter(m_screenSize),
-		UiStyle::TEXT_COLOR
+		{ m_screenSize.x / 2.f, cardPos.y + ScreenLayout::GAME_OVER_CARD_SIZE.y + 45.f },
+		UiStyle::MUTED_TEXT_COLOR
 	);
 }
 

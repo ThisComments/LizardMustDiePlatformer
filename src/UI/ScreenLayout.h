@@ -8,55 +8,43 @@
 
 namespace ScreenLayout
 {
-	constexpr float TITLE_HEIGHT_RATIO = 0.22f;
-	constexpr float MESSAGE_HEIGHT_RATIO = 0.32f;
-	constexpr float MENU_TOP_HEIGHT_RATIO = 0.45f;
-	constexpr float NOW_PLAYING_LABEL_HEIGHT_RATIO = 0.31f;
-	constexpr float TRACK_TITLE_HEIGHT_RATIO = 0.36f;
-	constexpr float TRACK_ARTIST_HEIGHT_RATIO = 0.41f;
-	constexpr float HINT_MARGIN_SCALE = 2.f;
+	constexpr sf::Vector2f MAIN_MENU_CARD_SIZE = { 620.f, 520.f };
+	constexpr sf::Vector2f PAUSE_CARD_SIZE = { 620.f, 540.f };
+	constexpr sf::Vector2f GAME_OVER_CARD_SIZE = { 640.f, 520.f };
+	constexpr sf::Vector2f HOW_TO_PLAY_CARD_SIZE = { 820.f, 680.f };
 
-	inline sf::Vector2f TitleCenter(const sf::Vector2f screenSize)
+	inline sf::Vector2f CardPosition(const sf::Vector2f screenSize, const sf::Vector2f cardSize)
 	{
-		return {screenSize.x / 2.f, screenSize.y * TITLE_HEIGHT_RATIO};
+		return {
+			(screenSize.x - cardSize.x) / 2.f,
+			(screenSize.y - cardSize.y) / 2.f
+		};
 	}
 
-	inline sf::Vector2f MessageCenter(const sf::Vector2f screenSize)
+	inline sf::Vector2f LogoCenter(const sf::Vector2f screenSize)
 	{
-		return {screenSize.x / 2.f, screenSize.y * MESSAGE_HEIGHT_RATIO};
+		return { screenSize.x / 2.f, screenSize.y * 0.14f };
 	}
 
-	inline sf::Vector2f NowPlayingLabelCenter(const sf::Vector2f screenSize)
+	inline sf::Vector2f SubtitleCenter(const sf::Vector2f screenSize)
 	{
-		return {screenSize.x / 2.f, screenSize.y * NOW_PLAYING_LABEL_HEIGHT_RATIO};
+		return { screenSize.x / 2.f, screenSize.y * 0.20f };
 	}
 
-	inline sf::Vector2f TrackTitleCenter(const sf::Vector2f screenSize)
-	{
-		return {screenSize.x / 2.f, screenSize.y * TRACK_TITLE_HEIGHT_RATIO};
-	}
-
-	inline sf::Vector2f TrackArtistCenter(const sf::Vector2f screenSize)
-	{
-		return {screenSize.x / 2.f, screenSize.y * TRACK_ARTIST_HEIGHT_RATIO};
-	}
-
-	inline sf::Vector2f HintCenter(const sf::Vector2f screenSize)
-	{
-		return {screenSize.x / 2.f, screenSize.y - UiStyle::SCREEN_MARGIN * HINT_MARGIN_SCALE};
-	}
-
-	inline sf::Vector2f ButtonPosition(const sf::Vector2f screenSize, const std::size_t index)
+	inline sf::Vector2f ButtonPosition(
+		const sf::Vector2f screenSize,
+		const std::size_t index,
+		const float startY
+	)
 	{
 		return {
 			(screenSize.x - UiStyle::BUTTON_SIZE.x) / 2.f,
-			screenSize.y * MENU_TOP_HEIGHT_RATIO +
-				static_cast<float>(index) * (UiStyle::BUTTON_SIZE.y + UiStyle::BUTTON_SPACING)
+			startY + static_cast<float>(index) * (UiStyle::BUTTON_SIZE.y + UiStyle::BUTTON_SPACING)
 		};
 	}
 
 	inline sf::Vector2f HudPosition()
 	{
-		return {UiStyle::SCREEN_MARGIN, UiStyle::SCREEN_MARGIN};
+		return { UiStyle::SCREEN_MARGIN, UiStyle::SCREEN_MARGIN };
 	}
 }

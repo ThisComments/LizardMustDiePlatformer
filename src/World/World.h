@@ -7,18 +7,16 @@
 
 #include "Infrastructure/Input/PlayerInputEvent.h"
 #include "Infrastructure/LevelRepository/LevelData.h"
+#include "Model/Collectible/Collectible.h"
 #include "Model/Entity/Entity.h"
 #include "Model/Map/Map.h"
 #include "Model/Player/Player.h"
-#include "Resources/ResourceManager.h"
 #include "Systems/CollisionSystem/CollisionSystem.h"
 #include "Systems/LiquidSystem/LiquidSystem.h"
 #include "Systems/TriggerSystem/TriggerSystem.h"
 #include "World/WorldEvent.h"
 #include "World/WorldStats.h"
 
-// State of one level: the map, every dynamic entity, statistics and the queue of events.
-// Not copyable: it hands out a pointer to its player and entities reference its systems.
 class World
 {
 private:
@@ -37,14 +35,21 @@ private:
 	std::vector<WorldEvent> m_events;
 	bool m_resultReported;
 
-	void CreateEntities(const LevelData& level, ResourceManager& resources);
+	void CreateEntities(const LevelData& level);
+	std::unique_ptr<Collectible> CreateCollectible(
+		CollectibleType type,
+		sf::Vector2f position
+	) const;
+	void ProcessCollectibles();
+	void ActivateCollectible(Collectible& collectible);
+	void ApplyCollectibleEffect(const CollectibleEffect& effect);
+	void SyncPlayerStats();
 	void ApplyPendingSpawns();
 	void RemoveFinishedEntities();
-	void UpdateStats(std::size_t firstNewEvent);
 	void ReportResult();
 
 public:
-	World(LevelData level, ResourceManager& resources);
+	explicit World(LevelData level);
 
 	World(const World&) = delete;
 	World& operator=(const World&) = delete;
@@ -52,7 +57,6 @@ public:
 	void PushPlayerInput(const PlayerInputEvent& event);
 	void Update(float dt);
 
-	// Returns the events produced since the last call and clears the queue.
 	std::vector<WorldEvent> DrainEvents();
 
 	const Map& GetMap() const;

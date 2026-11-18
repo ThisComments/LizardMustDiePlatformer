@@ -9,38 +9,11 @@ find_package(SFML 3 REQUIRED COMPONENTS Graphics Audio)
 find_package(tomlplusplus CONFIG REQUIRED)
 find_package(TagLib CONFIG REQUIRED)
 
-add_executable(game
-    src/main.cpp
-    src/Animation/AnimationComponent.cpp
-    src/Audio/AudioManager.cpp
-    src/Resources/ResourceManager.cpp
-    src/Model/Collectible/Collectible.cpp
-    src/Infrastructure/LevelRepository/LevelRepository.cpp
-    src/Infrastructure/Input/KeyboardHandler.cpp
-    src/App/CameraController/CameraController.cpp
-    src/App/Game/Game.cpp
-    src/Screens/ScreenManager/ScreenManager.cpp
-    src/Screens/MainMenuScreen/MainMenuScreen.cpp
-    src/Screens/GameplayScreen/GameplayScreen.cpp
-    src/Screens/PauseScreen/PauseScreen.cpp
-    src/Screens/GameOverScreen/GameOverScreen.cpp
-    src/Screens/HowToPlayScreen/HowToPlayScreen.cpp
-    src/UI/TextUtils/TextUtils.cpp
-    src/UI/Button/Button.cpp
-    src/UI/Menu/Menu.cpp
-    src/UI/HUD/HUD.cpp
-    src/UI/Overlay/ScreenOverlay.cpp
-    src/Model/Map/Map.cpp
-    src/Model/Player/Player.cpp
-    src/Model/Player/PlayerStateManager/PlayerStateManager.cpp
-    src/Systems/CollisionSystem/CollisionSystem.cpp
-    src/Systems/LiquidSystem/LiquidSystem.cpp
-    src/Systems/TriggerSystem/TriggerSystem.cpp
-    src/World/World.cpp
-    src/View/MapRenderer/MapRenderer.cpp
-    src/View/WorldRenderer/WorldRenderer.cpp
-    src/View/ParallaxBackground/ParallaxBackground.cpp
+file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
+
+add_executable(game ${GAME_SOURCES})
 
 target_include_directories(game PRIVATE src)
 

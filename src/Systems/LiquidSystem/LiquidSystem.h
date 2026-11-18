@@ -1,4 +1,5 @@
 #pragma once
+
 #include <SFML/Graphics/Rect.hpp>
 
 #include "Common/PhysicsTypes.h"
@@ -8,6 +9,7 @@ struct LiquidResult
 {
 	bool isInLiquid = false;
 	MovementModifiers modifiers;
+	int contactDamage = 0;
 };
 
 class LiquidSystem

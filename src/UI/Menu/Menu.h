@@ -14,6 +14,12 @@
 
 #include "UI/Button/Button.h"
 
+struct MenuItemSpec
+{
+	std::string label;
+	ButtonTheme theme = PS_BUTTON_THEME_PRIMARY;
+};
+
 class Menu
 {
 private:
@@ -30,8 +36,9 @@ private:
 public:
 	Menu(
 		const sf::Font& font,
-		const std::vector<std::string>& labels,
-		sf::Vector2f screenSize
+		const std::vector<MenuItemSpec>& items,
+		sf::Vector2f screenSize,
+		float startY
 	);
 
 	std::optional<std::size_t> HandleEvent(const sf::Event& event, const sf::RenderWindow& window);

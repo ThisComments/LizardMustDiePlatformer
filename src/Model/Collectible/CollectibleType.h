@@ -1,16 +1,23 @@
 #pragma once
 
-#include <cstdint>
-
-enum class CollectibleType : std::uint8_t
+enum CollectibleType
 {
-	Coin,
-	Gem
+	COLLECTIBLE_COIN,
+	COLLECTIBLE_GEM,
+	COLLECTIBLE_SPEED_POTION
 };
 
-enum class CollectibleState : std::uint8_t
+enum CollectibleEffectType
 {
-	Available,
-	Collecting,
-	Finished
+	EFFECT_NONE,
+	EFFECT_SCORE,
+	EFFECT_HEAL,
+	EFFECT_SPEED_BOOST,
+};
+
+struct CollectibleEffect
+{
+	CollectibleEffectType type = EFFECT_NONE;
+	float value = 0.f;
+	float duration = 0.f;
 };

@@ -1,41 +1,48 @@
 #pragma once
 
-#include "Animation/AnimationComponent.h"
+#include <vector>
+
+#include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
+
 #include "Model/Collectible/CollectibleType.h"
 #include "Model/Entity/Entity.h"
 #include "Model/Entity/Triggerable.h"
-#include "Resources/SpriteSheetAsset.h"
 
-// A pickup. It stays visible while its "collect" animation plays and is removed afterwards.
 class Collectible final : public Entity, public Triggerable
 {
 private:
-	CollectibleState m_state;
 	sf::Vector2f m_position;
 	sf::FloatRect m_bounds;
-	int m_points;
-	AnimationComponent m_animation;
-
-	void Collect(EntityContext& context);
+	std::vector<CollectibleEffect> m_effects;
+	bool m_collected;
 
 public:
-	// animationPhase in [0, 1) offsets the idle animation so neighbouring items do not blink in lockstep.
 	Collectible(
-		CollectibleType type,
-		sf::Vector2f position,
-		const SpriteSheetAsset& sheet,
-		float animationPhase
+		sf::Vector2f startPosition,
+		sf::Vector2f hitboxSize,
+		VisualId initialVisualId,
+		const CollectibleEffect& initialEffect
+	);
+
+	Collectible(
+		sf::Vector2f startPosition,
+		sf::Vector2f hitboxSize,
+		VisualId initialVisualId,
+		std::vector<CollectibleEffect> initialEffects
 	);
 
 	void Update(float dt, EntityContext& context) override;
-	void Draw(sf::RenderTarget& target) const override;
 
 	sf::Vector2f GetPosition() const override;
 	sf::FloatRect GetBounds() const override;
-	RenderLayer GetRenderLayer() const override;
-	float GetRenderDepth() const override;
 	bool IsPendingRemoval() const override;
 
 	sf::FloatRect GetTriggerBounds() const override;
-	void OnPlayerEnter(EntityContext& context) override;
+
+	void AddEffect(const CollectibleEffect& effect);
+	const std::vector<CollectibleEffect>& GetEffects() const;
+
+	bool IsCollected() const;
+	void MarkCollected();
 };

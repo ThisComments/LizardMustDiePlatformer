@@ -38,6 +38,5 @@ private:
 public:
 	ParallaxBackground(ResourceManager& resources, sf::Vector2f worldSize);
 
-	// Draws in the coordinates of worldView; the caller is responsible for activating that view.
 	void Draw(sf::RenderTarget& target, const sf::View& worldView) const;
 };

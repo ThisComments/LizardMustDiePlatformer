@@ -12,9 +12,18 @@ struct CollectibleSpawn
 	int row;
 };
 
-// Everything a level file describes: tile geometry + interactive objects.
+struct TileZone
+{
+	int col = 0;
+	int row = 0;
+	int width = 1;
+	int height = 1;
+};
+
 struct LevelData
 {
 	Map map;
+	CellCoordinates playerSpawn = { 0, 0 };
+	TileZone finishZone;
 	std::vector<CollectibleSpawn> collectibles;
 };

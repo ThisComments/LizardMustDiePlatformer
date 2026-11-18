@@ -3,7 +3,14 @@
 #include <algorithm>
 #include <cmath>
 
+#include <SFML/Graphics/Color.hpp>
+
 #include "Model/Map/TileProperties.h"
+
+namespace
+{
+	constexpr sf::Color BACKGROUND_TILE_TINT(145, 145, 165, 255);
+}
 
 MapRenderer::MapRenderer(ResourceManager& resources)
 {
@@ -23,6 +30,10 @@ MapRenderer::MapRenderer(ResourceManager& resources)
 			static_cast<float>(TILE_SIZE) / textureSize.x,
 			static_cast<float>(TILE_SIZE) / textureSize.y
 		});
+		if (properties.isBackground)
+		{
+			sprite.setColor(BACKGROUND_TILE_TINT);
+		}
 		m_tileSprites[index] = sprite;
 	}
 }

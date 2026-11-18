@@ -33,6 +33,16 @@ file = "assets/audio/effects/collect.wav"
 volume = 100
 voices = 4
 
+[sounds.damage]
+file = "assets/audio/effects/damage.wav"
+volume = 100
+voices = 2
+
+[sounds.heal]
+file = "assets/audio/effects/heal.wav"
+volume = 100
+voices = 1
+
 [sounds.victory]
 file = "assets/audio/effects/victory.wav"
 volume = 100

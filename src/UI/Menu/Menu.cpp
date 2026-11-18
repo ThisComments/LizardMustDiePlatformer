@@ -30,19 +30,21 @@ namespace
 
 Menu::Menu(
 	const sf::Font& font,
-	const std::vector<std::string>& labels,
-	const sf::Vector2f screenSize
+	const std::vector<MenuItemSpec>& items,
+	const sf::Vector2f screenSize,
+	const float startY
 )
 	: 	m_selected(0)
 {
-	m_buttons.reserve(labels.size());
-	for (std::size_t i = 0; i < labels.size(); ++i)
+	m_buttons.reserve(items.size());
+	for (std::size_t i = 0; i < items.size(); ++i)
 	{
 		m_buttons.emplace_back(
 			font,
-			labels[i],
-			ScreenLayout::ButtonPosition(screenSize, i),
-			UiStyle::BUTTON_SIZE
+			items[i].label,
+			ScreenLayout::ButtonPosition(screenSize, i, startY),
+			UiStyle::BUTTON_SIZE,
+			items[i].theme
 		);
 	}
 

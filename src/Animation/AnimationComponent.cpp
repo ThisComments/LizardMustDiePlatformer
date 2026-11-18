@@ -13,8 +13,10 @@ namespace
 		const SpriteSheetAsset::Clip* clip = sheet.FindClip(name);
 		if (clip == nullptr)
 		{
-			throw std::runtime_error("Sprite sheet " + sheet.GetSource().string() +
-				" has no animation '" + std::string(name) + "'");
+			throw std::runtime_error(
+				"Sprite sheet " + sheet.GetSource().string() +
+				" has no animation '" + std::string(name) + "'"
+			);
 		}
 		return *clip;
 	}
@@ -28,19 +30,22 @@ namespace
 		const int column = frameIndex % columns;
 		const int row = frameIndex / columns;
 		return sf::IntRect(
-			{column * frameSize.x, row * frameSize.y},
-			{frameSize.x, frameSize.y}
+			{ column * frameSize.x, row * frameSize.y },
+			{ frameSize.x, frameSize.y }
 		);
 	}
 }
 
-AnimationComponent::AnimationComponent(const SpriteSheetAsset& sheet, const std::string_view initialClip)
-	: m_sheet(sheet),
-	  m_sprite(sheet.GetTexture()),
-	  m_clip(&FindClipOrThrow(sheet, initialClip))
+AnimationComponent::AnimationComponent(
+	const SpriteSheetAsset& sheetAsset,
+	const std::string_view initialClip
+)
+	: 	m_sheet(&sheetAsset),
+		m_sprite(sheetAsset.GetTexture()),
+		m_clip(&FindClipOrThrow(sheetAsset, initialClip))
 {
-	const sf::Vector2i frameSize = m_sheet.GetFrameSize();
-	const sf::Vector2f origin = m_sheet.GetOrigin();
+	const sf::Vector2i frameSize = m_sheet->GetFrameSize();
+	const sf::Vector2f origin = m_sheet->GetOrigin();
 	m_sprite.setOrigin({
 		origin.x * static_cast<float>(frameSize.x),
 		origin.y * static_cast<float>(frameSize.y)
@@ -51,13 +56,13 @@ AnimationComponent::AnimationComponent(const SpriteSheetAsset& sheet, const std:
 
 void AnimationComponent::Play(const std::string_view clipName)
 {
-	const SpriteSheetAsset::Clip& clip = FindClipOrThrow(m_sheet, clipName);
-	if (&clip == m_clip)
+	const SpriteSheetAsset::Clip& nextClip = FindClipOrThrow(*m_sheet, clipName);
+	if (&nextClip == m_clip)
 	{
 		return;
 	}
 
-	m_clip = &clip;
+	m_clip = &nextClip;
 	m_frame = 0;
 	m_timer = 0.f;
 	m_finished = false;
@@ -104,15 +109,20 @@ void AnimationComponent::SetPosition(const sf::Vector2f position)
 	m_sprite.setPosition(position);
 }
 
-void AnimationComponent::SetFacingRight(const bool facingRight)
+void AnimationComponent::SetFacingRight(const bool isFacingRight)
 {
-	if (m_facingRight == facingRight)
+	if (m_facingRight == isFacingRight)
 	{
 		return;
 	}
 
-	m_facingRight = facingRight;
+	m_facingRight = isFacingRight;
 	ApplyScale();
+}
+
+void AnimationComponent::SetColor(const sf::Color color)
+{
+	m_sprite.setColor(color);
 }
 
 bool AnimationComponent::IsFinished() const
@@ -134,13 +144,13 @@ void AnimationComponent::ApplyFrame()
 {
 	m_sprite.setTextureRect(CalculateFrameRect(
 		m_clip->firstFrame + m_frame,
-		m_sheet.GetFrameSize(),
-		m_sheet.GetColumns()
+		m_sheet->GetFrameSize(),
+		m_sheet->GetColumns()
 	));
 }
 
 void AnimationComponent::ApplyScale()
 {
-	const float scale = m_sheet.GetDrawScale();
-	m_sprite.setScale({m_facingRight ? scale : -scale, scale});
+	const float scale = m_sheet->GetDrawScale();
+	m_sprite.setScale({ m_facingRight ? scale : -scale, scale });
 }
