@@ -1,0 +1,54 @@
+[volume]
+master = 100
+music = 25
+effects = 85
+
+[music]
+repeat_playlist = true
+shuffle = false
+
+[[music.playlist]]
+id = "main_theme"
+file = "assets/audio/music/Lastfragment_-РУСЫ-ПРОТИВ-ЯЩЕРОВ-GOIDA.ogg"
+
+[[music.playlist]]
+id = "second_theme"
+file = "assets/audio/music/SKWLKR_-РУСЫ-ПРОТИВ-ЯЩЕРОВ-FAB.ogg"
+
+[[music.playlist]]
+id = "third_theme"
+file = "assets/audio/music/SKWLKR_-Lastfragment_-РУСЫ-ПРОТИВ-ЯЩЕРОВ-BOYARE.ogg"
+
+[[music.playlist]]
+id = "fourthly_theme"
+file = "assets/audio/music/Lastfragment_-РУСЫ-ПРОТИВ-ЯЩЕРОВ-SLAVIC.ogg"
+
+[sounds.jump]
+file = "assets/audio/effects/jump.wav"
+volume = 100
+voices = 2
+
+[sounds.collect]
+file = "assets/audio/effects/collect.wav"
+volume = 100
+voices = 4
+
+[sounds.damage]
+file = "assets/audio/effects/damage.wav"
+volume = 100
+voices = 2
+
+[sounds.heal]
+file = "assets/audio/effects/heal.wav"
+volume = 100
+voices = 1
+
+[sounds.victory]
+file = "assets/audio/effects/victory.wav"
+volume = 100
+voices = 1
+
+[sounds.defeat]
+file = "assets/audio/effects/defeat.wav"
+volume = 100
+voices = 1

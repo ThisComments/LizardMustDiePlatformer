@@ -3,24 +3,15 @@
 #include <cmath>
 
 #include "View/ParallaxBackground/ParallaxBackground.h"
-#include "View/RenderConstants.h"
 #include "View/ParallaxBackground/ParallaxConstans.h"
 
-ParallaxBackground::ParallaxBackground(const sf::Vector2f worldSize)
-    :   m_backgroundTexture1(ParallaxConstants::LAYERS[0].texturePath),
-        m_backgroundTexture2(ParallaxConstants::LAYERS[1].texturePath),
-        m_backgroundTexture3(ParallaxConstants::LAYERS[2].texturePath),
-        layers
-        ({
-            {&m_backgroundTexture3, ParallaxConstants::LAYERS[2].parallaxFactor,
-                ParallaxConstants::LAYERS[2].isHorizontalRepeat},
-            {&m_backgroundTexture2, ParallaxConstants::LAYERS[1].parallaxFactor,
-                ParallaxConstants::LAYERS[1].isHorizontalRepeat},
-            {&m_backgroundTexture1, ParallaxConstants::LAYERS[0].parallaxFactor,
-                ParallaxConstants::LAYERS[0].isHorizontalRepeat}
-	    }),
-        m_worldSize(worldSize)
+ParallaxBackground::ParallaxBackground(ResourceManager& resources, const sf::Vector2f worldSize)
+    :   m_worldSize(worldSize)
 {
+    for (auto it = ParallaxConstants::LAYERS.rbegin(); it != ParallaxConstants::LAYERS.rend(); ++it)
+    {
+        m_layers.push_back({&resources.GetTexture(it->texturePath), it->parallaxFactor, it->isHorizontalRepeat});
+    }
 }
 
 void ParallaxBackground::Draw(
@@ -34,9 +25,7 @@ void ParallaxBackground::Draw(
 
 	const float cameraRight = worldView.getCenter().x + cameraSizeX / 2.f;
 
-	target.setView(worldView);
-
-	for (const ParallaxLayer& layer : layers)
+	for (const ParallaxLayer& layer : m_layers)
 	{
 		const ParallaxDrawData drawData = CalculateParallax(
 			layer,

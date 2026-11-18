@@ -11,7 +11,12 @@ enum class TileType: int
 	WoodPlanks = 3,
 	Water = 4,
 	Ice = 5,
-	Lava = 6
+	Lava = 6,
+	Snow = 7,
+	SnowBrick = 8,
+	LizardTech = 9,
+	WoodWallBg = 10,
+	StoneWallBg = 11
 };
 
-constexpr int TILE_TYPE_COUNT = 7;
+constexpr int TILE_TYPE_COUNT = 12;

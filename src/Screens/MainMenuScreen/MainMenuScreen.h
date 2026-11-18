@@ -18,6 +18,6 @@ public:
 
 	ScreenCommand HandleEvent(const sf::Event& event, const sf::RenderWindow& window) override;
 	ScreenCommand Update(float deltaTime) override;
-	void Render(sf::RenderWindow& window) override;
+	void Render(sf::RenderWindow& window) const override;
 	void OnEnter() override;
 };

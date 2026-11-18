@@ -3,12 +3,13 @@
 #include <iostream>
 
 #include "App/Game/Game.h"
+#include "Resources/ProjectPaths.h"
 
-int main()
+int main(int, char* argv[])
 {
 	try
 	{
-		Game game;
+		Game game(ProjectPaths::FromExecutable(argv[0]));
 		game.Run();
 	}
 	catch (const std::exception& error)

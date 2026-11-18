@@ -1,37 +1,23 @@
 #pragma once
 
-#include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/Graphics/Texture.hpp>
+#include <array>
+#include <optional>
 
-#include "Systems/RenderDataBuilder/RenderSnapshot.h"
+#include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/Sprite.hpp>
+#include <SFML/Graphics/View.hpp>
+
+#include "Model/Map/Map.h"
+#include "Model/Map/TileType.h"
+#include "Resources/ResourceManager.h"
 
 class MapRenderer
 {
 private:
-    sf::Texture m_textureGround;
-    sf::Texture m_textureIce;
-    sf::Texture m_textureWoodPlanks;
-    sf::Texture m_textureStone;
-    sf::Texture m_textureWater;
-    sf::Texture m_textureLava;
-    sf::Texture m_textureFallback;
-
-	const sf::Texture& GetTexture(TileType tileType) const;
-	void DrawTile(
-		TileType tileType,
-		sf::Vector2f position,
-		float tileSize,
-		sf::RenderTarget& target
-	) const;
+	std::array<std::optional<sf::Sprite>, TILE_TYPE_COUNT> m_tileSprites;
 
 public:
-    MapRenderer();
+	MapRenderer(ResourceManager& resources);
 
-    MapRenderer(const MapRenderer&) = delete;
-    MapRenderer& operator=(const MapRenderer&) = delete;
-
-    void Draw(
-        const MapRenderData& map, 
-        sf::RenderTarget& target
-    ) const;
+	void Draw(sf::RenderTarget& target, const Map& map, const sf::View& view) const;
 };

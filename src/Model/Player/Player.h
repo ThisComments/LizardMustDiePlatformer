@@ -1,55 +1,35 @@
 #pragma once
 
-#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 
-#include "Model/Player/EnvironmentState.h"
+#include "Infrastructure/Input/PlayerInputEvent.h"
+#include "Model/Actor/Actor.h"
 #include "Model/Player/PlayerStateManager/PlayerStateManager.h"
 
-class Player
+class Player final : public Actor
 {
 private:
-	sf::Vector2f m_position;
-	sf::Vector2f m_collisionSize;
-	sf::Vector2f m_velocity;
-	float m_facingDirection;
-	PlayerStateManager m_stateManager;
+	PlayerStateActions UpdateVelocity(float dt);
+	void UpdateSpeedBoost(float dt);
+	void StopDash();
+	void UpdateVisualState();
 
-	void Move(
-		float moveDirection,
-		float movementSpeedScale,
-		float friction,
-		bool isGrounded,
-		float dt
-	);
-	void UpdateDirection();
-	void ApplyGravity(
-		float gravity,
-		float gravityScale,
-		bool isJumpHeld,
-		bool isGrounded,
-		float dt
-	);
+	PlayerStateManager m_stateManager;
+	float m_speedMultiplier;
+	float m_speedBoostTimer;
+
+protected:
+	void OnHorizontalCollision(float surfaceNormalX) override;
 
 public:
-	Player(sf::Vector2f position, sf::Vector2f collisionSize);
+	explicit Player(sf::Vector2f startPosition);
 
 	void PushInput(const PlayerInputEvent& event);
-	void Update(const EnvironmentState& environmentState, float dt);
 
-	sf::FloatRect GetBounds() const;
-	sf::Vector2f GetVelocity() const;
-	sf::Vector2f GetPosition() const;
-	float GetFacingDirection() const;
-	const PlayerState& GetState() const;
-	bool IsGrounded() const;
-	bool IsDashing() const;
+	void Update(float dt, EntityContext& context) override;
+	bool IsPendingRemoval() const override;
 
-	void MoveBy(sf::Vector2f offset);
-	void ResolveHorizontalCollision(float surfaceNormalX);
-	void ResolveVerticalCollision(float surfaceNormalY);
-	void ApplyEnvironmentState(const EnvironmentState& environmentState);
-	void SetVelocity(sf::Vector2f newVelocity);
-	void SetPosition(sf::Vector2f newPosition);
-	void StopDash();
+	void ApplySpeedBoost(float multiplier, float duration);
+	float GetHealCooldown() const;
+	float GetDashCooldown() const;
 };

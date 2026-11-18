@@ -1,0 +1,16 @@
+frame_size = [32, 32]
+columns = 8
+origin = [0.5, 0.5]
+draw_scale = 1.25
+
+[animations.idle]
+first_frame = 0
+frame_count = 8
+fps = 10
+loop = true
+
+[animations.collect]
+first_frame = 8
+frame_count = 5
+fps = 20
+loop = false

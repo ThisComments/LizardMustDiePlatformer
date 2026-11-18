@@ -1,48 +1,48 @@
-
 #pragma once
 
-enum class VerticalState
+enum VerticalState
 {
-    Grounded,
-    Rising,
-    Falling
+	VERTICAL_GROUNDED,
+	VERTICAL_RISING,
+	VERTICAL_FALLING,
 };
 
-enum class MovementMode
+enum MovementMode
 {
-    Normal,
-    Dashing
+	MOVEMENT_NORMAL,
+	MOVEMENT_DASHING,
 };
 
 struct PlayerState
 {
-    VerticalState verticalState = VerticalState::Falling;
-    MovementMode movementMode = MovementMode::Normal;
+	VerticalState verticalState = VERTICAL_FALLING;
+	MovementMode movementMode = MOVEMENT_NORMAL;
 
-    bool moveLeftHeld = false;
-    bool moveRightHeld = false;
-    float facingDirection = 1.f;
+	bool moveLeftHeld = false;
+	bool moveRightHeld = false;
+	float facingDirection = 1.f;
 
-    bool jumpHeld = false;
-    bool canAirJump = false;
-    bool canAirDash = false;
+	bool jumpHeld = false;
+	bool canAirJump = false;
+	bool canAirDash = false;
 
-    float dashDirection = 1.f;
-    float dashTimer = 0.f;
-    float dashCooldown = 0.f;
+	float dashDirection = 1.f;
+	float dashTimer = 0.f;
+	float dashCooldown = 0.f;
+	float healCooldown = 0.f;
 
-    bool IsGrounded() const
-    {
-        return verticalState == VerticalState::Grounded;
-    }
+	bool IsGrounded() const
+	{
+		return verticalState == VERTICAL_GROUNDED;
+	}
 
-    bool IsDashing() const
-    {
-        return movementMode == MovementMode::Dashing;
-    }
+	bool IsDashing() const
+	{
+		return movementMode == MOVEMENT_DASHING;
+	}
 
-    float MoveDirection() const
-    {
-        return (moveRightHeld ? 1.f : 0.f) - (moveLeftHeld ? 1.f : 0.f);
-    }
+	float MoveDirection() const
+	{
+		return (moveRightHeld ? 1.f : 0.f) - (moveLeftHeld ? 1.f : 0.f);
+	}
 };

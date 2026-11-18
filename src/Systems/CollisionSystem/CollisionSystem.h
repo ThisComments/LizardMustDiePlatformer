@@ -15,12 +15,6 @@ struct AxisCollisionResult
 	float groundFriction = 0.f;
 };
 
-struct CollisionResult
-{
-	bool isGrounded = false;
-	float groundFriction = 0.f;
-};
-
 class CollisionSystem
 {
 public:

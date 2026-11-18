@@ -1,0 +1,17 @@
+#pragma once
+
+enum WorldEventType
+{
+	EVENT_PLAYER_JUMPED,
+	EVENT_COLLECTIBLE_COLLECTED,
+	EVENT_PLAYER_DAMAGED,
+	EVENT_PLAYER_HEALED,
+	EVENT_VICTORY_REACHED,
+	EVENT_PLAYER_DEFEATED,
+};
+
+struct WorldEvent
+{
+	WorldEventType type;
+	int value = 0;
+};

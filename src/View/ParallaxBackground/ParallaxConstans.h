@@ -1,8 +1,8 @@
 #pragma once
 
-#include <vector>
+#include <array>
 
-#include "View/RenderConstants.h"
+#include "Resources/AssetPaths.h"
 
 namespace ParallaxConstants
 {
@@ -15,8 +15,8 @@ namespace ParallaxConstants
 
 	constexpr std::array<ParallaxLayerConfig, 3> LAYERS =
 	{{
-		{RenderConstants::ParallaxLayer1, 0.8f, true},
-		{RenderConstants::ParallaxLayer2, 0.5f, true},
-		{RenderConstants::ParallaxLayer3, 0.2f, false}
+		{AssetPaths::ParallaxLayer1, 0.8f, true},
+		{AssetPaths::ParallaxLayer2, 0.5f, true},
+		{AssetPaths::ParallaxLayer3, 0.2f, false}
 	}};
 }

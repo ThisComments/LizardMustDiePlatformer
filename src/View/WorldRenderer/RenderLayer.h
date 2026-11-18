@@ -1,0 +1,9 @@
+#pragma once
+
+enum RenderLayer
+{
+	LAYER_BACKGROUND,
+	LAYER_PICKUPS,
+	LAYER_CHARACTERS,
+	LAYER_FOREGROUND,
+};

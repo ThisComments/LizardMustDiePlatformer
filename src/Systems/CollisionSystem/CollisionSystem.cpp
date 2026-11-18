@@ -4,7 +4,6 @@
 #include <cmath>
 #include <cstdint>
 
-#include "Model/Map/MapConstants.h"
 #include "Model/Map/TileProperties.h"
 
 namespace
@@ -35,7 +34,7 @@ namespace
 			return range;
 		}
 
-		const float tileSize = static_cast<float>(MapConstants::TileSize);
+		const float tileSize = static_cast<float>(TILE_SIZE);
 		const float maxIndex = static_cast<float>(tileCount - 1);
 		const float first = std::clamp(std::floor((min + COLLISION_EPSILON) / tileSize), 0.f, maxIndex);
 		const float last = std::clamp(std::floor((max - COLLISION_EPSILON) / tileSize), 0.f, maxIndex);

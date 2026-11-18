@@ -1,20 +1,20 @@
 #include "Model/Player/Player.h"
 
 #include <algorithm>
+#include <cmath>
 
-const float JUMP_RELEASE_GRAVITY_MULTIPLIER = 2.f;
-const float DASH_SPEED = 1000.f;
-const float MAX_SPEED = 300.f;
-const float JUMP_SPEED = -600.f;
-const float ACCELERATION = 1800.f;
-const float MAX_FALL_SPEED = 1500.f;
-const float DIRECTION_SPEED_THRESHOLD = 10.f;
+#include "Model/Player/PlayerConstants.h"
+#include "World/EntityContext.h"
 
-Player::Player(const sf::Vector2f position, const sf::Vector2f collisionSize)
-	: 	m_position(position),
-		m_collisionSize(collisionSize),
-		m_velocity({0.f, 0.f}),
-		m_facingDirection(1.f)
+Player::Player(const sf::Vector2f startPosition)
+	: 	Actor(
+			startPosition,
+			PlayerConstants::COLLISION_SIZE,
+			PlayerConstants::MAX_HEALTH,
+			VISUAL_HERO_IDLE
+		),
+		m_speedMultiplier(PlayerConstants::DEFAULT_SPEED_MULTIPLIER),
+		m_speedBoostTimer(0.f)
 {
 }
 
@@ -23,171 +23,54 @@ void Player::PushInput(const PlayerInputEvent& event)
 	m_stateManager.PushInput(event);
 }
 
-void Player::Update(const EnvironmentState& environmentState, const float dt)
+void Player::Update(const float dt, EntityContext& context)
 {
-	const bool wasGrounded = m_stateManager.GetState().IsGrounded();
+	UpdateStatusTimers(dt);
+	UpdateSpeedBoost(dt);
+	environment.gravity = context.gravity;
 
-	const PlayerStateActions actions = m_stateManager.ProcessInputQueue(
-		environmentState.movementModifiers.allowsJump,
-		environmentState.movementModifiers.allowsDash
-	);
-	const PlayerState& state = m_stateManager.GetState();
-
-	if (state.IsDashing())
+	const PlayerStateActions actions = UpdateVelocity(dt);
+	if (actions.jumpStarted)
 	{
-		m_velocity.x = state.dashDirection * DASH_SPEED;
-		m_velocity.y = 0.f;
+		context.events.push_back({ EVENT_PLAYER_JUMPED, 0 });
 	}
-	else
+	if (actions.healStarted && Heal(PlayerConstants::BAIKAL_WATER_HEAL_AMOUNT))
 	{
-		Move(
-			state.MoveDirection(),
-			environmentState.movementModifiers.movementSpeedScale,
-			environmentState.groundFriction,
-			wasGrounded,
-			dt
-		);
-		ApplyGravity(
-			environmentState.gravity,
-			environmentState.movementModifiers.gravityScale,
-			state.jumpHeld,
-			wasGrounded,
-			dt
-		);
-
-		if (actions.jumpStarted)
-		{
-			m_velocity.y = JUMP_SPEED;
-		}
+		context.events.push_back({ EVENT_PLAYER_HEALED, PlayerConstants::BAIKAL_WATER_HEAL_AMOUNT });
 	}
 
-	UpdateDirection();
-
-	const bool wasDashing = state.IsDashing();
-	m_stateManager.UpdateTimers(dt, actions.dashStarted);
-
-	if (wasDashing && !state.IsDashing())
-	{
-		m_velocity.x = 0.f;
-	}
+	ApplyPhysicsStep(dt, context);
+	m_stateManager.ApplyPhysicsResult(environment.isGrounded, velocity.y);
+	UpdateVisualState();
 }
 
-void Player::ApplyGravity(
-	const float gravity,
-	const float gravityScale,
-	const bool isJumpHeld,
-	const bool isGrounded,
-	const float dt
-)
+bool Player::IsPendingRemoval() const
 {
-	if (isGrounded)
+	return false;
+}
+
+void Player::ApplySpeedBoost(const float multiplier, const float duration)
+{
+	if (multiplier <= 0.f || duration <= 0.f)
 	{
 		return;
 	}
 
-	float currentGravity = gravity * gravityScale;
-	if (m_velocity.y < 0.f && !isJumpHeld)
-	{
-		currentGravity *= JUMP_RELEASE_GRAVITY_MULTIPLIER;
-	}
-
-	m_velocity.y += currentGravity * dt;
-	m_velocity.y = std::min(m_velocity.y, MAX_FALL_SPEED);
+	m_speedMultiplier = multiplier;
+	m_speedBoostTimer = duration;
 }
 
-void Player::StopDash()
+float Player::GetHealCooldown() const
 {
-	m_stateManager.StopDash();
-	m_velocity.x = 0.f;
+	return m_stateManager.GetState().healCooldown;
 }
 
-void Player::Move(
-	const float moveDirection,
-	const float movementSpeedScale,
-	const float friction,
-	const bool isGrounded,
-	const float dt
-)
+float Player::GetDashCooldown() const
 {
-	const bool isMoving = moveDirection != 0.f;
-
-	if (isMoving)
-	{
-		m_velocity.x += moveDirection * ACCELERATION * dt;
-	}
-
-	if (isGrounded && !isMoving)
-	{
-		if (m_velocity.x > 0.f)
-		{
-			m_velocity.x = std::max(0.f, m_velocity.x - friction * dt);
-		}
-		else if (m_velocity.x < 0.f)
-		{
-			m_velocity.x = std::min(0.f, m_velocity.x + friction * dt);
-		}
-	}
-
-	const float currentMaxSpeed = MAX_SPEED * movementSpeedScale;
-	m_velocity.x = std::clamp(m_velocity.x, -currentMaxSpeed, currentMaxSpeed);
+	return m_stateManager.GetState().dashCooldown;
 }
 
-void Player::UpdateDirection()
-{
-	if (m_velocity.x > DIRECTION_SPEED_THRESHOLD)
-	{
-		m_facingDirection = 1.f;
-	}
-	else if (m_velocity.x < -DIRECTION_SPEED_THRESHOLD)
-	{
-		m_facingDirection = -1.f;
-	}
-}
-
-sf::FloatRect Player::GetBounds() const
-{
-	return sf::FloatRect(
-		{m_position.x - m_collisionSize.x / 2.f, m_position.y - m_collisionSize.y / 2.f},
-		m_collisionSize
-	);
-}
-
-bool Player::IsGrounded() const
-{
-	return m_stateManager.GetState().IsGrounded();
-}
-
-bool Player::IsDashing() const
-{
-	return m_stateManager.GetState().IsDashing();
-}
-
-sf::Vector2f Player::GetPosition() const
-{
-	return m_position;
-}
-
-float Player::GetFacingDirection() const
-{
-	return m_facingDirection;
-}
-
-const PlayerState& Player::GetState() const
-{
-	return m_stateManager.GetState();
-}
-
-sf::Vector2f Player::GetVelocity() const
-{
-	return m_velocity;
-}
-
-void Player::MoveBy(const sf::Vector2f offset)
-{
-	m_position += offset;
-}
-
-void Player::ResolveHorizontalCollision(const float surfaceNormalX)
+void Player::OnHorizontalCollision(const float surfaceNormalX)
 {
 	if (m_stateManager.GetState().IsDashing())
 	{
@@ -195,31 +78,97 @@ void Player::ResolveHorizontalCollision(const float surfaceNormalX)
 		return;
 	}
 
-	if (m_velocity.x * surfaceNormalX < 0.f)
+	Actor::OnHorizontalCollision(surfaceNormalX);
+}
+
+PlayerStateActions Player::UpdateVelocity(const float dt)
+{
+	const bool wasGrounded = m_stateManager.GetState().IsGrounded();
+	const bool canHeal = IsAlive() && health < maxHealth;
+
+	const PlayerStateActions actions = m_stateManager.ProcessInputQueue(
+		environment.movementModifiers.allowsJump,
+		environment.movementModifiers.allowsDash,
+		canHeal
+	);
+	const PlayerState& state = m_stateManager.GetState();
+
+	if (state.IsDashing())
 	{
-		m_velocity.x = 0.f;
+		velocity.x = state.dashDirection * PlayerConstants::DASH_SPEED;
+		velocity.y = 0.f;
+	}
+	else
+	{
+		ApplyHorizontalMovement(
+			state.MoveDirection(),
+			environment.movementModifiers.movementSpeedScale * m_speedMultiplier,
+			PlayerConstants::MAX_SPEED,
+			PlayerConstants::ACCELERATION,
+			environment.groundFriction,
+			wasGrounded,
+			dt
+		);
+		ApplyGravity(
+			environment.gravity,
+			environment.movementModifiers.gravityScale,
+			PlayerConstants::JUMP_RELEASE_GRAVITY_MULTIPLIER,
+			state.jumpHeld,
+			wasGrounded,
+			dt
+		);
+
+		if (actions.jumpStarted)
+		{
+			velocity.y = PlayerConstants::JUMP_SPEED;
+		}
+	}
+
+	UpdateFacingFromVelocity();
+
+	const bool wasDashing = state.IsDashing();
+	m_stateManager.UpdateTimers(dt, actions.dashStarted);
+
+	if (wasDashing && !state.IsDashing())
+	{
+		velocity.x = 0.f;
+	}
+
+	return actions;
+}
+
+void Player::UpdateSpeedBoost(const float dt)
+{
+	if (m_speedBoostTimer <= 0.f)
+	{
+		return;
+	}
+
+	m_speedBoostTimer = std::max(0.f, m_speedBoostTimer - dt);
+	if (m_speedBoostTimer <= 0.f)
+	{
+		m_speedMultiplier = PlayerConstants::DEFAULT_SPEED_MULTIPLIER;
 	}
 }
 
-void Player::ResolveVerticalCollision(const float surfaceNormalY)
+void Player::StopDash()
 {
-	if (m_velocity.y * surfaceNormalY < 0.f)
+	m_stateManager.StopDash();
+	velocity.x = 0.f;
+}
+
+void Player::UpdateVisualState()
+{
+	if (m_stateManager.GetState().IsGrounded())
 	{
-		m_velocity.y = 0.f;
+		visualId = std::abs(velocity.x) > PlayerConstants::RUN_SPEED_THRESHOLD
+			? VISUAL_HERO_RUN
+			: VISUAL_HERO_IDLE;
 	}
-}
-
-void Player::ApplyEnvironmentState(const EnvironmentState& environmentState)
-{
-	m_stateManager.ApplyPhysicsResult(environmentState.isGrounded, m_velocity.y);
-}
-
-void Player::SetVelocity(const sf::Vector2f newVelocity)
-{
-	m_velocity = newVelocity;
-}
-
-void Player::SetPosition(const sf::Vector2f newPosition)
-{
-	m_position = newPosition;
+	else
+	{
+		visualId = velocity.y < -PlayerConstants::RISE_SPEED_THRESHOLD
+			? VISUAL_HERO_JUMP
+			: VISUAL_HERO_FALL;
+	}
 }

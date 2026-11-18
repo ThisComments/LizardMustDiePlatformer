@@ -1,40 +1,96 @@
-SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
-S.........................................................................S
-S.........................................................................S
-S.........................................................................S
-S.........................................................................S
-S.........................................................................S
-S.........................................................................S
-S.........................................................................S
-S....................................................GGGGGGGGGG...........S
-S.................................GGGGGGGGGGGGG...........................S
-S............GGGGGGGGGGGGGGG..............................................S
-S...........G........................................S....................S
-S..........G........................................S.....................S
-S..................................................S......................S
-S..SSSSSS....................................SSSSSS.......................S
-S......................SSSSSS.............................................S
-S.........................................................................S
-S..............IIIIIIIII............................................GGGGG.S
-S........................................GGG.......................G......S
-S.................................................................G.......S
-S...........................IIIIIIIIIII..........................G........S
-S.........PPPPP........................................SSSSS..............S
-S.........................................................................S
-S..............................................................SSSSS......S
-S......................SSSS...P...........................................S
-S....PPPPP.....................P.....SSSS........SSSS.....................S
-S...............................P.........................................S
-S.................................P.......................................S
-S.GGGGGGGGGGG........IIIIIIIIIIII..PPPPPPPPP..................GGGGGGGGGGG.S
-S...................................WWWWWWWW..............................S
-S...................................WWWWWWWW..S...........................S
-S...................................WWWWWWWW.S............................S
-S...................................WWWWWWWWS.............................S
-S...................................WWWWWWWS..............................S
-S......................................SSSS...............................S
-S....................................SS...................................S
-S...................................S.....................................S
-S.........................................................................S
-SWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLS
-SSSSSSSSSSSSSSSSSSSSSSSSSSS....SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+S..............................................................................................................................................................S
+S..............................................................................................................................................................S
+S..............................................................................................................................................................S
+S........................................................RRRRRRRRRRRR..........................................................................................S
+S........................................................RrrrrrrrrrrR...................................NNNNNNNNNNNNNN.........................................S
+S...................NNNNNNNNNN...........................RrrrrrrrrrrR..................................NrrrrrrrrrrrrrrN........................................S
+S..................NPPPPPPPPPPN..........................RrrPPPPPPrrR.................................NrrrrrrrrrrrrrrrrN.......................................S
+S.................NPbbbbbbbbbbPN.........................RrrrrrrrrrrR................................NrrrPPPPPPPPPPPPrrrN......................................S
+S................NPbbbbbbbbbbbbPN........................RrrrrrrrrrrR................................Rrrrrrrrrrrrrrrrrrrr...................TTTTTTTTTTTT.......S
+S...............NPbbbbPPPPPPbbbbPN.......................RRRR....RRRR................................Rrrrrrrrrrrrrrrrrrrr...................T..........T.......S
+S...............PbbbbbbbbbbbbbbbbP.......................RrrrrrrrrrrR................................RrrPPPP......PPPPrrR...................T..TTTTTT..T.......S
+S...............PbbbbbbbbbbbbbbbbP..........IIIIII.......RrrrrrrrrrrR...........IIIIII...............rrrrrrrrrrrrrrrrrrrR......TTTTTT.......T..........T.......S
+S...............PbbPPPP....PPPPbbP.......................RrrPPPPPPrrR................................rrrrrrrrrrrrrrrrrrrR...................T..........T..RRR..S
+S..NNNNNNN......PbbbbbbbbbbbbbbbbP.......................RrrrrrrrrrrR........................IIII....RRRRRR........RRRRRR...................TTTTTTTTTTTT..RrR..S
+S..GGGGGGN......PbbbbbbbbbbbbbbbbP....NNNN...............RrrrrrrrrrrR................................RrrrrrrrrrrrrrrrrrrR..........TTTTT..................RrR..S
+S..SSSSSGN......PPPPPPP....PPPPPPP....GGGG...............RRRR....RRRR................................RrrrrrrrrrrrrrrrrrrR.................................RrR..S
+S......SGN......PbbbbbbbbbbbbbbbbP....SSSS..............................................RRRRRRRRR....RrrPPPPPPPPPPPPPPrrR..TTTT...........................RrR..S
+S......SGN......PbbbbbbbbbbbbbbbbP......................................................RrrrrrrrR....RrrrrrrrrrrrrrrrrrrR...................TTTTTTTTTTTT..RrR..S
+S......SGN......PbbPPPPPPPPPPPPbbP............PPPPPP....IIIIII..........................RrrrrrrrR....RrrrrrrrrrrrrrrrrrrR...................T..........T..RrR..S
+S......SGN......PbbbbbbbbbbbbbbbbP......................................IIIIIIIIIII.....RrrPPPrrR....RRRRR..........RRRRR........TTTTTT.....T..TTTTTT..T..RrR..S
+S......SGN......PbbbbbbbbbbbbbbbbP......................................................RrrrrrrrR....RrrrrrrrrrrrrrrrrrrR...................T..........T..RrR..S
+S......SGN......PPPP..........PPPP......NNNNNNNNNN......................................RrrrrrrrR....RrrrrrrrrrrrrrrrrrrR..TTTT.............T..........T..RrR..S
+S......SGN......PbbbbbbbbbbbbbbbbP......PbbbbbbbbP.........IIIIIIII.....................RRR...RRR....RrrPPPP......PPPPrrR...........TTTTT...T..........T..RrR..S
+S......SGN......PbbbbbbbbbbbbbbbbP......PbbbbbbbbP.........................PPPPPP.......RrrrrrrrR....RrrrrrrrrrrrrrrrrrrR...................TTTTTTTTTTTT..RrR..S
+S......SGN......bbbbbPPPPPPPPbbbbb......bbbPPPPbbb......IIII............................RrrrrrrrR....RrrrrrrrrrrrrrrrrrrR........TTTT.....................RrR..S
+S......SGN......bbbbbbbbbbbbbbbbbb......bbbbbbbbbb...................IIII...............RrrrrrrrR....RRRR............RRRR.................................RrR..S
+S..NNNNNNNNNNNNNPbbbbbbbbbbbbbbbbPNNNNNNPbbbbbbbbPNNNN..................................rrrrrrrrr....rrrrrrrrrrrrrrrrrrrr...TTTT....TTTTT....TTTTTTTTT....RRR..S
+S..GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGN...IIIIIIIIII.....................rrrrrrrrr....rrrrrrrrrrrrrrrrrrrr...................NNNNNNNNNNNNNNNNNNNS
+S..SSSSSSSSSSSSSSSSSSSS....SSSSSSSSSSSSSSSSSSSSSSSSSSN...SSSSSSSSSS.....IIIIIIIIIIII....RRRRRRRRR....RrrPPPP......PPPPrrR..........TTTTT....GGGGGGGGGGGGGGGGGGGS
+S..SbbbbbbbbbbbbbbbbbbS....SbbbbbbbbbbbbbbbbbbbbbbbbSN..................SSSSSSSSSSSS....SSSSSSSSS....RrrrrrrrrrrrrrrrrrrR...................SSSSSSSSSSSSSSSSSSSS
+S..SbbbbbbbbbbbbbbbbbbS....SbbbbbbbbbbbbbbbbbbbbbbbbSN.................................SrrrrrrrrS....RrrrrrrrrrrrrrrrrrrR..TTTT.............SrrrrrrrrrrrrrrrrrrS
+S..SbbbbbbbbbbbbbbbbbbS....SbbbbbbbbbbbbbbbbbbbbbbbbSN.........IIIIII..................SrrrrrrrrS....RRRRR..........RRRRR...................SrrrrrrrrrrrrrrrrrrS
+S..SbbPPPPPPPPPPPPPPbbS....SbbPPPPPPPPPPPPPPPPPPPPbbSN.................................SrrPPPPrrS....SrrrrrrrrrrrrrrrrrrS........TTTTTT.....SrrPPPPPPPPPPPPPPrrS
+S..SbbbbbbbbbbbbbbbbbbS....SbbbbbbbbbbbbbbbbbbbbbbbbSN..................IIIIII.........SrrrrrrrrS....SrrrrrrrrrrrrrrrrrrS...................SrrrrrrrrrrrrrrrrrrS
+S..SbbbbbbbbbbbbbbbbbbPPPPPPbbbbbbbbbbbbbbbbbbbbbbbbSN.................................rrrrrrrrrS....SrrPPPP......PPPPrrS...................SrrrrrrrrrrrrrrrrrrS
+S..SWWWWWWWWWWWWWWWWWW......WWWWWWWWWWWWWWWWWWWWWWWWWN...WWWWWWWWWWWWWWWWWWWWWWWWWW....rrrrrrrrrS....Srrrrrrrrrrrrrrrrrrr...................SWWWWWWWWWWWWWWWWWWS
+S..SWWWWWWWWWWWWWWWWWW......WWWWWWWWWWWWWWWWWWWWWWWWWN...WWWWWWWWWWWWWWWWWWWWWWWWWW.IIISrrrrrrrrS....Srrrrrrrrrrrrrrrrrrr...................SWWWWWWWWWWWWWWWWWWS
+S..SSSSSSSSSSSSSSSSSSS......SSSSSSSSSSSSSSSSSSSSSSSSSS...WWWWWWWWWWWWWWWWWWWWWWWWWW.SSSSSSSSSSSSS....SSSSS..........SSSSS...................SSSSSSSSSSSSSSSSSSSS
+S........................................................WWWWWWWWWWWWWWWWWWWWWWWWWW..................SLLLLLLLLLLLLLLLLLLS...LLLLLLLLLLLLLL.....................S
+S........................................................SSSSSSSSSSSSSSSSSSSSSSSSSS..................SLLLLLLLLLLLLLLLLLLS...LLLLLLLLLLLLLL.....................S
+S.............IIIIIIIIIIIIIIIIIIII...................................................................SSSSSSSSSSSSSSSSSSSS...SSSSSSSSSSSSSS.....................S
+S..WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW.................................LLLLLLLLLL..............................................................S
+SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS...SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+[objects]
+player 4 12
+finish 155 12 3 16
+coin 12 25
+coin 20 23
+coin 24 23
+coin 18 17
+coin 26 17
+gem 22 8
+coin 36 13
+coin 44 20
+coin 44 24
+coin 14 31
+coin 32 31
+gem 46 35
+coin 49 10
+coin 53 16
+coin 61 3
+coin 65 3
+gem 62 11
+coin 62 17
+coin 62 22
+coin 73 10
+coin 77 18
+coin 70 23
+coin 65 34
+gem 72 33
+coin 84 15
+coin 84 21
+coin 94 31
+gem 94 25
+coin 105 6
+coin 111 6
+gem 108 3
+coin 102 15
+coin 114 15
+coin 108 21
+coin 103 27
+coin 113 27
+gem 108 33
+coin 121 15
+coin 129 13
+coin 135 18
+coin 128 23
+coin 132 28
+coin 143 10
+gem 145 7
+coin 143 19
+gem 145 21
+coin 148 25
+gem 148 34
+speed_potion 6 13

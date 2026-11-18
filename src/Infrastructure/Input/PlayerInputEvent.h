@@ -1,18 +1,18 @@
-
 #pragma once
 
-enum class PlayerInputEventType: int
+enum PlayerInputEventType
 {
-    MoveLeftPressed,
-    MoveLeftReleased,
-    MoveRightPressed,
-    MoveRightReleased,
-    JumpPressed,
-    JumpReleased,
-    DashPressed
+	INPUT_MOVE_LEFT_PRESSED,
+	INPUT_MOVE_LEFT_RELEASED,
+	INPUT_MOVE_RIGHT_PRESSED,
+	INPUT_MOVE_RIGHT_RELEASED,
+	INPUT_JUMP_PRESSED,
+	INPUT_JUMP_RELEASED,
+	INPUT_DASH_PRESSED,
+	INPUT_HEAL_PRESSED,
 };
 
 struct PlayerInputEvent
 {
-    PlayerInputEventType type;
+	PlayerInputEventType type;
 };

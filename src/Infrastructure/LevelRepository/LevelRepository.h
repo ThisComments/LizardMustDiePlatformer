@@ -4,13 +4,13 @@
 #include <istream>
 #include <string>
 
-#include "Model/Map/Map.h"
+#include "Infrastructure/LevelRepository/LevelData.h"
 
 class LevelRepository
 {
 private:
-	Map Parse(std::istream& stream, const std::string& sourceName) const;
+	LevelData Parse(std::istream& stream, const std::string& sourceName) const;
 
 public:
-	Map Load(const std::filesystem::path& levelFile) const;
+	LevelData Load(const std::filesystem::path& levelFile) const;
 };
